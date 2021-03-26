@@ -1,0 +1,221 @@
+'use strict';
+const Http = require('http');
+const FS = require('fs');
+const Assert = require('assert');
+const Path = require('path');
+const HttpConst = require('./HttpConst');
+const MyHttpRequest = require('./MyHttpRequest');
+const IMyServer = require('./IMyServer');
+const { LOG, WARN, ERROR } = require('../MyUtil');
+
+//==========MyHttpResponse==========
+class MyHttpResponse extends Http.ServerResponse {
+
+    constructor() {
+        Assert(false, "please use decorate!");
+    }
+
+    toString() {
+        return this.socket.toString();
+    }
+
+    /**
+     * @param {MyHttpRequest} req 
+     * @param {IMyServer} server
+     */
+    response(req, server) {
+        Assert(false, '必须重载该函数');
+    }
+    /**
+     * @param {MyHttpRequest} req 
+     * @param {MyHttpResponse} resp 
+     * @param {Number} statusCode 
+     * @param {String} str 
+     */
+    respString(req, statusCode, str = '') {
+        this.statusCode = statusCode;
+        this.statusMessage = Http.STATUS_CODES[statusCode];
+
+        if (str) {
+            const buf = Buffer.from(str);
+            this.setHeader(HttpConst.HEADER["Content-Type"], HttpConst.CONTENT_TYPE.UTF8);
+            this.setHeader(HttpConst.HEADER["Content-Length"], buf.length);
+            this.write(buf);
+        }
+        this.end();
+        WARN(req.toString(), `resp ${this.statusCode} ${this.statusMessage}\t${str.substr(0, 255)}...`);
+    }
+
+    /**
+     * @param {MyHttpRequest} req 
+     * @param {MyHttpResponse} resp 
+     * @param {Number} statusCode 
+     * @param {String} errstr 
+     */
+    respError(req, statusCode, errstr) {
+        this.respString(req, statusCode, errstr);
+    }
+
+    /**
+     * @param {MyHttpRequest} req 
+     * @param {String} location 
+     */
+    respRedirect(req, location) {
+        this.statusCode = 302
+        this.statusMessage = Http.STATUS_CODES[302];
+        this.setHeader(HttpConst.HEADER.Location, location);
+        this.end();
+    }
+
+    /**
+     * @param {MyHttpRequest} req 
+     * @param {string} path
+     * @param {FS.Stats} stat path对应的fs.stats，必须确保stat.isFile()为true才行
+     * @param {IMyServer} server
+     * @param {boolean} sendContentType 设置响应头content-type 默认true
+     */
+    async respFile(req, path, stat, server, sendContentType = true) {
+        Assert(stat.isFile(), 'resp file is not a file: ' + path);
+        const t = sendContentType ? HttpConst.DOC_CONT_TYPE[Path.extname(path).toLocaleLowerCase()] || '*/*' : '*/*';
+
+        let fh = null;
+        try {
+            fh = await server.fm.open(path);
+        } catch (error) {
+            this.respError(req, 500, error.message);
+            return;
+        }
+
+        this.setHeader(HttpConst.HEADER["Content-Type"], t);
+        this.setHeader(HttpConst.HEADER["Content-Length"], stat.size);
+
+        fh.pipe(this).then(
+            () => {
+                this.end();
+                // req.socket.destroy();
+            },
+            error => {
+                WARN(this.toString(), 'pipe file failed: ', error.stack);
+                this.destroy(error);
+                req.destroy(error);
+            }
+        )
+    }
+
+    /**
+     * 检查是否对应的请求方法，不匹配将自动回复405错误，并返回false
+     * @param {MyHttpRequest} req
+     * @param {string} method
+     */
+    checkIsMethod(req, method) {
+        if (req.method !== method) {
+            this.respError(req, 405);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查请求体长度，如果小于minLen，自动回复400，如果大于maxLen，自动回复413
+     * @param {MyHttpRequest} req 
+     * @param {number} minLen 默认值1
+     * @param {number} maxLen 默认值0 表示不检查最大长度
+     * @returns {number}检查成功返回content-len，失败就返回0,
+     */
+    checkContentLen(req, minLen = 1, maxLen = 0) {
+        const _bodyLen = parseInt(req.headers[HttpConst.HEADER["Content-Length"]]);
+
+        if (_bodyLen < minLen) {
+            this.respError(req, 400, `content-length is too small`);
+            return 0;
+        }
+
+        if (maxLen && _bodyLen > maxLen) {
+            this.respError(req, 413);
+            return 0;
+        }
+
+        return _bodyLen;
+    }
+
+    /**
+     * 自动处理上传文件的请求
+     * @param {MyHttpRequest} req 
+     * @param {IMyServer} server 
+     * @param {string} path 
+     */
+    handleUpload(req, server, path) {
+        let _ws = null;
+        server.fm.create(path).then(
+            ws => {
+                if (req.aborted) {
+                    ws.giveup();
+                    return;
+                }
+                _ws = ws;
+                req.pipe(ws);
+                ws.onceWriteFinish((err, path) => {
+                    if (err) {
+                        if (req.aborted) {
+                            this.end();
+                        } else {
+                            this.respError(req, 500, err.toString());
+                        }
+                        return;
+                    }
+                    this.respError(req, 200);
+                });
+            },
+            err => {
+                //req.socket.pause();没效果
+                req.on('readable', () => req.pause());
+                this.respError(req, 500, err.toString());
+                this.once('close', () =>
+                    req.destroy()
+                );
+            }
+        );
+
+        req.once('aborted', () => {
+            WARN(this.toString(), 'request aborted');
+            if (_ws) _ws.giveup();
+        });
+        // req.once('error', err => {
+        //     WARN(this.toString(), 'request error: ', err);
+        //     this.respError(req, 400, err.toString());
+        // });
+        // req.once('end', () => {
+        //     WARN(this.toString(), 'request end');
+        // });
+        // req.once('close', () => {
+        //     //底层链接已关闭，socket已经设为null了
+        // });
+    }
+
+
+
+
+    static _decorate() {
+        Assert(!(this instanceof MyHttpResponse), "can not new or re decorate!");
+        Assert((this instanceof Http.ServerResponse), "'this' is not instanceof Http.ServerResponse!");
+
+        Object.setPrototypeOf(this, MyHttpResponse.prototype);
+        this.hasErr = false;
+    }
+
+    /**
+     * @param {Http.ServerResponse} resp
+     */
+    static decorate(resp) {
+        MyHttpResponse._decorate.call(resp);
+    }
+
+    /**
+     * @param {Http.ServerResponse} resp
+     */
+    static create(RespClass, resp) {
+        Object.setPrototypeOf(resp, RespClass.prototype);
+        return resp;
+    }
+}
+module.exports = MyHttpResponse;
