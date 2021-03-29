@@ -627,6 +627,47 @@ function testOpendir() {
     });
 }
 
+// testUploadDownload();
+function testUploadDownload() {
+    const reqs = [];
+    for (let i = 0; i < 1000; i++) {
+        const j = Math.round(Math.random() * 10);
+        const req = Http.request('http://localhost:80', {
+            method: 'get',
+            path: '/uploaddownload?file=01.txt',
+            headers: {
+                'Content-Length': j,
+            },
+        }, resp => {
+            console.log(`${resp.statusCode} ${resp.statusMessage}`);
+            console.log(`${JSON.stringify(resp.headers)}`);
+            resp.setEncoding('utf8');
+            resp.on('data', s => console.log(s));
+            resp.on('error', err => console.log('response error: ', err));
+            resp.on('end', () => console.log('resp end'));
+        });
+        req.on('error', err => console.log('request error: ', err))
+        req.end(() => {
+            console.log('req end');
+        });
+        setTimeout(() => {
+            // req.destroy();
+        }, j * 20);
+        reqs.push(req);
+    }
+}
+
+testStringDecoder();
+function testStringDecoder() {
+    const { StringDecoder } = require('string_decoder');
+    const dec = new StringDecoder('utf8');
+    console.log(dec.write(Buffer.from([255, 255, 220, 120, 97, 98, 99])));
+    console.log(dec.end());
+    console.log(dec.write(Buffer.from([255, 255, 220, 120, 97, 98, 99])));
+    console.log(dec.end());
+
+}
+
 // lala();
 async function lala() {
     // const MyUtil = require('./MyUtil');
@@ -639,31 +680,15 @@ async function lala() {
     // const resp = require('./MyResponses');
     // console.log(resp.get('/Upload'));
 
-    var ws0 = fs.createWriteStream('./test/01.txt');
-    ws0.write('abc\r\n');
-    ws0.write('def\r\n');
-    ws0.end('ghi\r\n');
+    const buf = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 255]);
+    const buf2 = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength);
+    const buf4 = Buffer.from(buf.buffer, buf.byteOffset - 6, buf.byteLength + 6 + 16);
+    const buf3 = Buffer.from(buf);
 
-    await new Promise((res, rej) => ws0.addListener('finish', () => { res() }));
-    ws0.close();
+    console.log(buf.buffer === buf3.buffer);
+    console.log(buf, buf2, buf3, buf4);
+    console.log(buf.byteOffset, buf2.byteOffset, buf3.byteOffset);
 
-    var fd = await MyUtil.MyPromise(fs.open, './test/01.txt', fs.constants.O_CREAT);
-    var fh = new MyFileManager.MyFileHandle(fd);
-    await fh.getStats().then(stats => console.log(stats.size));
 
-    var ws1 = fs.createWriteStream('./test/03.txt');
-    var ws2 = fs.createWriteStream('./test/04.txt');
 
-    fh.pipe(ws1).then(
-        () => {
-            console.log('pipe finished');
-            ws1.close();
-        },
-        err => {
-            console.log(err);
-            // ws1.close();
-        }
-    )
-
-    // ws1.close();
 }

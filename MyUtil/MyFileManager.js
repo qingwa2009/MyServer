@@ -11,9 +11,30 @@ const { LOG, WARN, ERROR } = require('./MyUtil');
 class MyFileManager {
     /**@type {Map<string, Promise<MyFileManager.MyFileHandle>>}*/
     _readingfds = new Map();
-    // _closingfds = new Map();
     /**@type {Map<string, Promise<MyFileManager.MyFileWriteStream>>}*/
     _writingStreams = new Map();
+
+    async toValue() {
+        const rs = [];
+        for (const [_, v] of this._readingfds) {
+            rs.push((await v).toValue());
+        }
+        const ws = [];
+        for (const [_, v] of this._writingStreams) {
+            ws.push((await v).toValue());
+        }
+
+        return {
+            'readingCount': this._readingfds.size,
+            'reading': rs,
+            'writingCount': this._writingStreams.size,
+            'writing': ws,
+        }
+    }
+
+    async toString() {
+        return JSON.stringify(await this.toValue());
+    }
 
     /**
      * @param {string} path  转全大写
@@ -33,11 +54,6 @@ class MyFileManager {
             return Promise.reject(new Error('file is writing!'));
         }
 
-        // if (this._closingfds.has(uPath)) {
-        //     ERROR(`file open ${uPath} failed: file is closing!`);
-        //     return Promise.reject(new Error('file is closing!'));
-        // }
-
         if (!this._readingfds.has(uPath)) {
             const p = new Promise((res, rej) => {
                 FS.open(uPath, FS.constants.O_RDONLY, (err, fd) => {
@@ -47,7 +63,7 @@ class MyFileManager {
                         rej(err);
                     } else {
                         WARN('file opened: ', uPath);
-                        const fh = new MyFileManager.MyFileHandle(fd)
+                        const fh = new MyFileManager.MyFileHandle(fd, path)
                         fh.onceClose(() => { this._readingfds.delete(uPath) });
                         res(fh);
                     }
@@ -304,6 +320,16 @@ MyFileManager.MyFileWriteStream = class MyFileWriteStream extends FS.WriteStream
     static decorate(stream) {
         MyFileWriteStream._decorate.call(stream);
     }
+
+    /**
+     * @returns {{path: string}}
+     */
+    toValue() {
+        return { path: this.path };
+    }
+    toString() {
+        return JSON.stringify(this.toValue());
+    }
 }
 
 MyFileManager.MyFileHandle = class MyFileHandle {
@@ -319,9 +345,13 @@ MyFileManager.MyFileHandle = class MyFileHandle {
     /**@type {Promise<FS.Stats>} */
     _statPromise = null;
 
-    /**@param{number} fd*/
-    constructor(fd) {
+    /**
+     * @param{number} fd
+     * @param{string} path
+     */
+    constructor(fd, path) {
         this.fd = fd
+        this.path = path;
     }
 
     get isClosed() {
@@ -431,6 +461,16 @@ MyFileManager.MyFileHandle = class MyFileHandle {
         this._refCount--;
     }
 
+    toString() {
+        return JSON.stringify(this.toValue());
+    }
+
+    /**
+     * @returns {{path: string, fd: number, ref: number}}
+     */
+    toValue() {
+        return { path: this.path, fd: this.fd, ref: this._refCount }
+    }
 }
 
 module.exports = MyFileManager;

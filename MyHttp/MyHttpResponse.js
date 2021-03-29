@@ -6,7 +6,7 @@ const Path = require('path');
 const HttpConst = require('./HttpConst');
 const MyHttpRequest = require('./MyHttpRequest');
 const IMyServer = require('./IMyServer');
-const { LOG, WARN, ERROR } = require('../MyUtil');
+const { LOG, WARN, ERROR, MyFileManager } = require('../MyUtil');
 
 //==========MyHttpResponse==========
 class MyHttpResponse extends Http.ServerResponse {
@@ -95,7 +95,7 @@ class MyHttpResponse extends Http.ServerResponse {
                 // req.socket.destroy();
             },
             error => {
-                WARN(this.toString(), 'pipe file failed: ', error.stack);
+                WARN(this.toString(), `pipe file ${path} failed: `, error.message);
                 this.destroy(error);
                 req.destroy(error);
             }
@@ -145,6 +145,7 @@ class MyHttpResponse extends Http.ServerResponse {
      * @param {string} path 
      */
     handleUpload(req, server, path) {
+        /**@type {MyFileManager.MyFileWriteStream} */
         let _ws = null;
         server.fm.create(path).then(
             ws => {

@@ -104,7 +104,10 @@ module.exports = class RespUploadDownload extends MyHttpResponse {
     handleGetFile(req, server, path) {
         FS.stat(path, (err, stat) => {
             if (err) {
-                this.respError(req, 500, err.message);
+                if (err.code === 'ENOENT')
+                    this.respError(req, 404, err.message);
+                else
+                    this.respError(req, 500, err.message);
                 return;
             }
             if (!stat.isFile()) {

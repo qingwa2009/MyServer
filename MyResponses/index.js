@@ -10,5 +10,6 @@ module.exports = {
     },
     '/upload': require('./RespUpload'),//通用上传文件
     '/uploaddownload': require('./RespUploadDownload'),//
+    '/status': require('./RespStatus'),
 
 }

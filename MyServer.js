@@ -34,9 +34,8 @@ module.exports = class MyServer extends IMyServer {
         });
     }
 
-    /**@returns {string} */
-    status() {
-        Assert(false, '必须重载该函数');
+    async status() {
+        return await this.fm.toString();
     }
 
 
@@ -164,7 +163,8 @@ module.exports = class MyServer extends IMyServer {
         }
 
         MyUtil.LOG(sock.toString(), "upgrading to websocket...");
-        wshandler.add(MyWebSocket.handshake(req, sock, head));
+        const ws = MyWebSocket.handshake(req, sock, head);
+        if (ws) wshandler.add(ws);
     }
 }
 

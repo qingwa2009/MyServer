@@ -25,7 +25,7 @@ module.exports = class IMyServer {
     stop() {
         Assert(false, '必须重载该函数');
     }
-    /**@returns {string} */
+    /**@returns {Promise<string>} */
     status() {
         Assert(false, '必须重载该函数');
     }
