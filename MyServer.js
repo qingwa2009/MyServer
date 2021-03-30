@@ -8,18 +8,24 @@ const Assert = require('assert');
 const MyUtil = require('./MyUtil');
 const MyFileManager = MyUtil.MyFileManager;
 
-const { IMyServer, HttpConst, MyHttpRequest, MyHttpResponse, MySocket, MyWebSocket } = require('./MyHttp');
+const { IMyServer, IMyServerSetting, HttpConst, MyHttpRequest, MyHttpResponse, MySocket, MyWebSocket } = require('./MyHttp');
 const RESP_CLASS_LIST = require('./MyResponses');
 const WEBSOCKET_HANDLER_LIST = require('./MyWebSocketHandlers');
 
 module.exports = class MyServer extends IMyServer {
 
+    /**
+     * 
+     * @param {IMyServerSetting} websiteSetting 
+     */
     constructor(websiteSetting) {
         super();
         this.websiteSetting = websiteSetting;
-        // this.websiteSetting.ip = ip;
-        // this.websiteSetting.port = port;
-        // this.websiteSetting.main_page = main_page;
+        MyUtil.ENABLE_LOG = this.websiteSetting.debug_log;
+        MyUtil.ENABLE_WARN = this.websiteSetting.debug_warn;
+        MyUtil.ENABLE_ERROR = this.websiteSetting.debug_error;
+        if (this.websiteSetting.enable_web_log)
+            MyUtil.setWebLogger(WEBSOCKET_HANDLER_LIST.get('/weblog'));
     }
 
 

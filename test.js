@@ -657,7 +657,7 @@ function testUploadDownload() {
     }
 }
 
-testStringDecoder();
+// testStringDecoder();
 function testStringDecoder() {
     const { StringDecoder } = require('string_decoder');
     const dec = new StringDecoder('utf8');
@@ -668,7 +668,7 @@ function testStringDecoder() {
 
 }
 
-// lala();
+lala();
 async function lala() {
     // const MyUtil = require('./MyUtil');
     // console.log(MyUtil.ENABLE_LOG);
@@ -681,14 +681,22 @@ async function lala() {
     // console.log(resp.get('/Upload'));
 
     const buf = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 255]);
+
+
+
     const buf2 = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength);
     const buf4 = Buffer.from(buf.buffer, buf.byteOffset - 6, buf.byteLength + 6 + 16);
-    const buf3 = Buffer.from(buf);
+    const buf3 = Buffer.from(buf, 5, 5);
+    buf3.writeBigUInt64BE(BigInt(10));
 
     console.log(buf.buffer === buf3.buffer);
     console.log(buf, buf2, buf3, buf4);
     console.log(buf.byteOffset, buf2.byteOffset, buf3.byteOffset);
 
+    const n = 4611686018427387904;//Number(BigInt(4611686018427387904));
+    console.log(Number.MAX_SAFE_INTEGER);
 
-
+    const bb = Buffer.allocUnsafe(3);
+    buf.copy(bb, 0, 3);
+    console.log(bb);
 }

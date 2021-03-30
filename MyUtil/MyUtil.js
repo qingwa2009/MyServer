@@ -1,15 +1,22 @@
 'use strict';
 const FS = require('fs');
-
+const IMyWebLogger = require('./IMyWebLogger');
 
 let ENABLE_LOG = false;
 let ENABLE_WARN = true;
 let ENABLE_ERROR = true;
+/**@type {IMyWebLogger} */
+let WEB_LOGGER = undefined;
+
 Object.defineProperties(exports, {
     ENABLE_LOG: { get: () => ENABLE_LOG, set: val => ENABLE_LOG = val },
     ENABLE_WARN: { get: () => ENABLE_WARN, set: val => ENABLE_WARN = val },
     ENABLE_ERROR: { get: () => ENABLE_ERROR, set: val => ENABLE_ERROR = val },
 });
+
+exports.setWebLogger = function (/**@type {IMyWebLogger} */wg) {
+    WEB_LOGGER = wg;
+}
 
 exports.now = now;
 function now() {
@@ -43,18 +50,37 @@ exports.extractUrlFolderPart =
 
 exports.LOG = LOG;
 function LOG(message, ...params) {
-    if (ENABLE_LOG)
-        console.log(`${now()}\tinfo ${message}`, ...params);
+    if (ENABLE_LOG) {
+        const s = `${now()}\tinfo ${message}`;
+        console.log(s, ...params);
+        if (WEB_LOGGER) {
+            params.unshift(s);
+            WEB_LOGGER.send(params.join('\t'));
+        }
+    }
+
 }
 exports.WARN = WARN;
 function WARN(message, ...params) {
-    if (ENABLE_WARN)
-        console.warn(`${now()}\twarn ${message}`, ...params);
+    if (ENABLE_WARN) {
+        const s = `${now()}\twarn ${message}`;
+        console.log(s, ...params);
+        if (WEB_LOGGER) {
+            params.unshift(s);
+            WEB_LOGGER.send(params.join('\t'));
+        }
+    }
 }
 exports.ERROR = ERROR;
 function ERROR(message, ...params) {
-    if (ENABLE_ERROR)
-        console.error(`${now()}\terror ${message}`, ...params);
+    if (ENABLE_ERROR) {
+        const s = `${now()}\terror ${message}`;
+        console.log(s, ...params);
+        if (WEB_LOGGER) {
+            params.unshift(s);
+            WEB_LOGGER.send(params.join('\t'));
+        }
+    }
 }
 
 exports.MyPromise = MyPromise;

@@ -53,9 +53,28 @@ class MyWebSocket extends MySocket {
     wsBinaryType = MyWebSocket.BINARY_TYPE_BLOB;
     wsProtocol = '';
 
+    /**@type {number} 设置最大单帧内容长度，超出指定长度将自动关闭连接 默认Number.MAX_SAFE_INTEGER-1 9007199254740990*/
+    maxFrameLength;
+
     constructor() {
         Assert(false, "please use decorate!");
     }
+
+    _init() {
+        this._currParse = this._parseFinOpcode;
+        this._loadedLen = 0;
+        this._payloadLen = 0;
+        this._payloadLenBuf = Buffer.allocUnsafe(8);
+        this._payloadLenBufOffset = 0;
+        this._maskBuf = Buffer.allocUnsafe(4);
+        this._maskBufOffset = 0;
+        this._dataBufs = [];
+        this._stringDecoder = new StringDecoder('utf8');
+        this.closeCode = 0;
+        this.closeReason = '';
+        this.maxFrameLength = Number.MAX_SAFE_INTEGER - 1;
+    }
+
 
     /**
      * @param {string} protocol 
@@ -72,6 +91,7 @@ class MyWebSocket extends MySocket {
         this.wsReadyState = MyWebSocket.READY_STATE_OPEN;
         this.on('data', this._OnData.bind(this));
         this.on('close', this._OnClose.bind(this));
+        this.on('error', err => this.wsReadyState = MyWebSocket.READY_STATE_CLOSING);
         if (head && head.byteLength) this._OnData(head);
     }
 
@@ -79,12 +99,44 @@ class MyWebSocket extends MySocket {
 
     /**
      * @param {string | Buffer} data 
+     * @throws 'WebSocket is already in CLOSING or CLOSED state'
      */
     send(data) {
+        if (this.wsReadyState !== MyWebSocket.READY_STATE_OPEN) {
+            ERROR(this.toString(), 'Send failed: WebSocket is already in CLOSING or CLOSED state!');
+            return;
+        }
 
+        let buf = data;
+        let fop = 130;
+        if (typeof data === "string") {
+            buf = Buffer.from(data, 'utf8');
+            fop = 129
+        }
+        const contentLen = buf.byteLength;
+        let head;
+        if (contentLen < 126) {
+            head = Buffer.allocUnsafe(2);
+            head[1] = contentLen;
+        } else if (contentLen < 65536) {
+            head = Buffer.allocUnsafe(4);
+            head[1] = 126;
+            head.writeUInt16BE(contentLen, 2);
+        } else {
+            head = Buffer.allocUnsafe(10);
+            head[1] = 127;
+            head.writeBigUInt64BE(BigInt(contentLen), 2);
+        }
+        head[0] = fop;
+        this.write(head);
+        this.write(buf);
     }
 
-    ping() {
+    sendPing() {
+        if (this.wsReadyState !== MyWebSocket.READY_STATE_OPEN) {
+            ERROR(this.toString(), 'Ping failed: WebSocket is already in CLOSING or CLOSED state!');
+            return;
+        }
         const buf = Buffer.allocUnsafe(2);
         buf[0] = 137;
         buf[1] = 0;
@@ -94,7 +146,7 @@ class MyWebSocket extends MySocket {
     /**
      * @param {Net.Socket} sock
      * @param {number} code 
-     * @param {string} reason 
+     * @param {string} reason 最大不要超过123字节     发送时并不会对长度做检查
      */
     static close(sock, code, reason) {
         let buf;
@@ -108,15 +160,16 @@ class MyWebSocket extends MySocket {
             buf[1] = 2;
         }
         buf[0] = 136;
-        buf.writeInt16BE(code, 2);
+        buf.writeUInt16BE(code, 2);
         sock.end(buf);
     }
 
     /**
-     * @param {number} code default 1005
-     * @param {string} reason 
+     * @param {number} code default 1000
+     * @param {string} reason 最大不要超过123字节   发送时并不会对长度做检查
      */
-    close(code = MyWebSocket.WS_CLOSE_NO_STATUS_RECV, reason = '') {
+    close(code = MyWebSocket.WS_CLOSE_NORMAL, reason = '') {
+        if (this.wsReadyState !== MyWebSocket.READY_STATE_OPEN) return;
         this.wsReadyState = MyWebSocket.READY_STATE_CLOSING;
         this.closeCode = code;
         this.closeReason = reason;
@@ -125,9 +178,11 @@ class MyWebSocket extends MySocket {
 
     _OnClose() {
         this.wsReadyState = MyWebSocket.READY_STATE_CLOSED;
-        // if (this._isClientRequestClose)
         this.emit(MyWebSocket.LISTENER_CLIENTCLOSE, this, this.closeCode, this.closeReason);
     }
+
+
+
 
     /**
      * @param {Buffer} buf
@@ -137,20 +192,6 @@ class MyWebSocket extends MySocket {
         this._currParse(buf, 0, buf.byteLength);
     }
 
-    _init() {
-        this._currParse = this._parseFinOpcode;
-        this._loadedLen = 0;
-        this._payloadLen = 0;
-        this._payloadLenBuf = Buffer.allocUnsafe(8);
-        this._payloadLenBufOffset = 0;
-        this._maskBuf = Buffer.allocUnsafe(4);
-        this._maskBufOffset = 0;
-        this._dataBufs = [];
-        this._stringDecoder = new StringDecoder('utf8');
-        this._isClientRequestClose = false;
-        this.closeCode = 0;
-        this.closeReason = '';
-    }
 
     /**解析fin opcode
      * @param {Buffer} buf 
@@ -197,6 +238,10 @@ class MyWebSocket extends MySocket {
                 break;
             default:
                 this._payloadLen = payloadLen;      //payload len < 126
+                if (this._payloadLen > this.maxFrameLength) {
+                    this.close(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
+                    return;
+                }
                 this._currParse = this._parseMask;
                 break;
         }
@@ -218,6 +263,10 @@ class MyWebSocket extends MySocket {
 
             if (this._payloadLenBufOffset > 1) {
                 this._payloadLen = this._payloadLenBuf.readUInt16BE(0);
+                if (this._payloadLen > this.maxFrameLength) {
+                    this.close(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
+                    return;
+                }
                 this._currParse = this._parseMask;
                 if (offset >= buflen) return;
                 break;
@@ -238,7 +287,11 @@ class MyWebSocket extends MySocket {
             this._payloadLenBuf[this._payloadLenBufOffset++] = b;
 
             if (this._payloadLenBufOffset > 7) {
-                this._payloadLen = this._payloadLenBuf.readBigUInt64BE(0);
+                this._payloadLen = Number(this._payloadLenBuf.readBigUInt64BE(0));
+                if (this._payloadLen > this.maxFrameLength) {
+                    this.close(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
+                    return;
+                }
                 this._currParse = this._parseMask;
                 if (offset >= buflen) return;
                 break;
@@ -293,8 +346,8 @@ class MyWebSocket extends MySocket {
             this._handleOneFrameRecved();
             //多收到的下一帧推回去       
             if (additionalLen > 0) {
-                // const addbuf = Buffer.from(buf, buflen - additionalLen, additionalLen);
-                // this.unshift(addbuf);
+                const addbuf = Buffer.from(buf.buffer, buflen - additionalLen, additionalLen);
+                this.unshift(addbuf);
             }
         }
     }
@@ -369,30 +422,36 @@ class MyWebSocket extends MySocket {
         }
 
         //客户端请求关闭
-        let buf;
         if (this._dataBufs.length > 0) {
             const msg = Buffer.concat(this._dataBufs);
-            const closeCode = msg.readInt16BE(0);
+            const closeCode = msg.readUInt16BE(0);
             const closeReason = this._stringDecoder.end(Buffer.from(msg.buffer, msg.byteOffset + 2, msg.byteLength - 2));
             this.close(closeCode, closeReason);
         } else {
             this.close();
         }
 
-        this.wsReadyState = MyWebSocket.READY_STATE_CLOSING;
-        this._isClientRequestClose = true;
     }
 
     _handlePing() {
-        const buf = Buffer.allocUnsafe(2);
+        let buf;
+        if (this._dataBufs.length > 0) {
+            const msg = Buffer.concat(this._dataBufs);
+            const len = Math.min(125, msg.byteLength);
+            buf = Buffer.allocUnsafe(2 + len);
+            buf[1] = len;
+            msg.copy(buf, 2, 0);
+        } else {
+            buf = Buffer.allocUnsafe(2);
+            buf[1] = 0;
+        }
         buf[0] = 138;
-        buf[1] = 0;
-
         this.write(buf);
+        this._dataBufs = [];
     }
 
     _handlePong() {
-        LOG(this.toString(), 'pong');
+        WARN(this.toString(), 'pong');
         this._dataBufs = [];
     }
 

@@ -1,13 +1,35 @@
 'use strict';
 const { IMyWebSocketHandler, MyWebSocket } = require('../MyHttp');
+const { LOG, WARN, ERROR } = require('../MyUtil');
+
+
 class WSSamples extends IMyWebSocketHandler {
+
+    /**
+     * 在添加WebSocket时对其进行设定
+     * @param {MyWebSocket} ws 
+     */
+    _setupWebSocket(ws) {
+        ws.maxFrameLength = 1024 * 1204;
+    }
+
     /**
      * @param {MyWebSocket} ws 
      * @param {string | Buffer} msg 
      */
     _onMessage(ws, msg) {
-        console.log(msg);
-        // ws.close(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, '你是烧饼！');
+        // console.log(msg);
+        ws.send(msg);
+        // ws.close(1000, Array.from({ length: 10086 }, (_, i) => i));
+        // ws.sendPing();
+    }
+
+    /**
+     * @param {MyWebSocket} ws 
+     * @param {NodeJS.ErrnoException} err
+     */
+    _onError(ws, err) {
+        WARN(err);
     }
 }
 module.exports = new WSSamples();

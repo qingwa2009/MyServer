@@ -10,6 +10,6 @@ module.exports = {
     },
     '/sample': require('./WSSample'),
     '/weblog': require('./WSLogger'),
-    // '/uploaddownload': require('./RespUploadDownload'),//
+    '/multiplayer': require('./WSMultiplayer'),
 
 }
