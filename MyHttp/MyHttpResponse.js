@@ -43,7 +43,7 @@ class MyHttpResponse extends Http.ServerResponse {
             this.write(buf);
         }
         this.end();
-        WARN(req.toString(), `resp ${this.statusCode} ${this.statusMessage}\t${str.substr(0, 255)}...`);
+        WARN(req.toString(), `resp ${this.statusCode} ${this.statusMessage}\t${str.substr(0, 123)}...`);
     }
 
     /**
@@ -168,10 +168,12 @@ class MyHttpResponse extends Http.ServerResponse {
                 });
             },
             err => {
-                //req.socket.pause();没效果
-                req.on('readable', () => req.pause());
-                this.respError(req, 500, err.toString());
-                this.once('close', () =>
+                // if (_ws)
+                //     req.unpipe(_ws);
+                // req.pause();                             //没效果过，辣鸡                                
+                req.on('readable', () => req.pause());      //停止接收
+                this.respError(req, 500, err.toString());   //client收不到这条消息，估计client不是全双工-_-!!!
+                this.once('finish', () =>
                     req.destroy()
                 );
             }

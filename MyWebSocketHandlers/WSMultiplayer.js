@@ -29,11 +29,13 @@ class WSMultiplayer extends IMyWebSocketHandler {
 
     /**
      * @param {MyWebSocket} ws 
+     * @param {number} code 
+     * @param {string} reason
      */
-    remove(ws) {
-        super.remove(ws);
+    _onClientClose(ws, code, reason) {
+        super._onClientClose(ws, code, reason);
         const msg = this.delPlayerMsg(ws);
-        this.sendToAll(msg);
+        this.sendToAllExceptSelf(ws, msg);
     }
 
     /**
@@ -41,15 +43,17 @@ class WSMultiplayer extends IMyWebSocketHandler {
      * @param {string | Buffer} msg 
      */
     _onMessage(ws, msg) {
-        this.sendToAll(msg);//转发
+        if (msg.includes(ACT_MOV))//仅转发mov动作
+            this.sendToAll(msg);
     }
 
     /**
+     * client强行关闭时会有read ECONNRESET的错误，_onClientClose会收到1001 (WS_CLOSE_GOING_AWAY)
      * @param {MyWebSocket} ws 
      * @param {NodeJS.ErrnoException} err
      */
     _onError(ws, err) {
-        ERROR(err);
+        ERROR(ws.toString(), err.message);
     }
 
     addPlayerMsg(ws, isSelf = false) {
@@ -70,10 +74,7 @@ class WSMultiplayer extends IMyWebSocketHandler {
 
     sendNewPlayerToAll(ws) {
         const msg = this.addPlayerMsg(ws);
-        for (const ws0 of this._websockets.values()) {
-            if (ws === ws0) continue;
-            ws0.send(msg);
-        }
+        this.sendToAllExceptSelf(ws, msg);
     }
 
     sendAllToNewPlayer(ws) {
@@ -86,6 +87,13 @@ class WSMultiplayer extends IMyWebSocketHandler {
     sendToAll(msg) {
         for (const ws of this._websockets.values()) {
             ws.send(msg);
+        }
+    }
+
+    sendToAllExceptSelf(ws, msg) {
+        for (const ws0 of this._websockets.values()) {
+            if (ws === ws0) continue;
+            ws0.send(msg);
         }
     }
 

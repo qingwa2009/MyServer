@@ -1,15 +1,19 @@
 'use strict';
 const Http = require('http');
 const Assert = require('assert');
+const { EventEmitter } = require('events');
 const IMyServerSetting = require('./IMyServerSetting');
 const { MyFileManager } = require('../MyUtil');
 
-module.exports = class IMyServer {
+module.exports = class IMyServer extends EventEmitter {
     websiteSetting = new IMyServerSetting();
     fm = new MyFileManager();
     server = Http.createServer();
+    socketCount = 0;
+    _isStatusChange = false;
 
     constructor() {
+        super();
         this.server.on('request', this._OnRequest.bind(this));
         this.server.on("listening", this._OnListening.bind(this));
         this.server.on("connection", this._OnConnection.bind(this));
@@ -17,6 +21,19 @@ module.exports = class IMyServer {
         this.server.on("clientError", this._OnClientError.bind(this));
         this.server.on("error", this._OnError.bind(this));
         this.server.on("close", this._OnClose.bind(this));
+    }
+
+    notifyStatusChange() {
+        if (this._isStatusChange) return;
+        this._isStatusChange = true;
+        process.nextTick(() => {
+            this.emit('status');
+            this._isStatusChange = false;
+        });
+    }
+
+    onStatusChange(cb) {
+        this.on('status', cb);
     }
 
     start() {

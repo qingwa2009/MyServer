@@ -101,7 +101,7 @@ class MyWebSocket extends MySocket {
      * @param {string | Buffer} data 
      * @throws 'WebSocket is already in CLOSING or CLOSED state'
      */
-    send(data) {
+    send(data = '') {
         if (this.wsReadyState !== MyWebSocket.READY_STATE_OPEN) {
             ERROR(this.toString(), 'Send failed: WebSocket is already in CLOSING or CLOSED state!');
             return;
@@ -176,6 +176,15 @@ class MyWebSocket extends MySocket {
         MyWebSocket.close(this, code, reason);
     }
 
+    /**
+     * @param {number} code 
+     * @param {string} reason 最大不要超过123字节   发送时并不会对长度做检查
+     */
+    _closeForClientBadReq(code, reason) {
+        this._currParse = null;
+        this.close(code, reason);
+    }
+
     _OnClose() {
         this.wsReadyState = MyWebSocket.READY_STATE_CLOSED;
         this.emit(MyWebSocket.LISTENER_CLIENTCLOSE, this, this.closeCode, this.closeReason);
@@ -189,7 +198,8 @@ class MyWebSocket extends MySocket {
      */
     _OnData(buf) {
         // console.log(buf);
-        this._currParse(buf, 0, buf.byteLength);
+        if (this._currParse)
+            this._currParse(buf, 0, buf.byteLength);
     }
 
 
@@ -224,7 +234,7 @@ class MyWebSocket extends MySocket {
         let b = buf[offset++];
         const mask = b >> 7;
         if (!mask) {
-            this.close(MyWebSocket.WS_CLOSE_INVALID_FRAME_PAYLOAD_DATA, 'mask!=1');
+            this._closeForClientBadReq(MyWebSocket.WS_CLOSE_INVALID_FRAME_PAYLOAD_DATA, 'mask!=1');
             return;
         }
 
@@ -239,7 +249,7 @@ class MyWebSocket extends MySocket {
             default:
                 this._payloadLen = payloadLen;      //payload len < 126
                 if (this._payloadLen > this.maxFrameLength) {
-                    this.close(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
+                    this._closeForClientBadReq(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
                     return;
                 }
                 this._currParse = this._parseMask;
@@ -264,7 +274,7 @@ class MyWebSocket extends MySocket {
             if (this._payloadLenBufOffset > 1) {
                 this._payloadLen = this._payloadLenBuf.readUInt16BE(0);
                 if (this._payloadLen > this.maxFrameLength) {
-                    this.close(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
+                    this._closeForClientBadReq(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
                     return;
                 }
                 this._currParse = this._parseMask;
@@ -289,7 +299,7 @@ class MyWebSocket extends MySocket {
             if (this._payloadLenBufOffset > 7) {
                 this._payloadLen = Number(this._payloadLenBuf.readBigUInt64BE(0));
                 if (this._payloadLen > this.maxFrameLength) {
-                    this.close(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
+                    this._closeForClientBadReq(MyWebSocket.WS_CLOSE_MSG_TOO_BIG, `msg too big! max len ${this.maxFrameLength}`);
                     return;
                 }
                 this._currParse = this._parseMask;
@@ -373,7 +383,7 @@ class MyWebSocket extends MySocket {
                 this._handlePong();
                 break
             default:
-                this.close(MyWebSocket.WS_CLOSE_INVALID_FRAME_PAYLOAD_DATA, `unknown opcode: ${this._opcode}`);
+                this._closeForClientBadReq(MyWebSocket.WS_CLOSE_INVALID_FRAME_PAYLOAD_DATA, `unknown opcode: ${this._opcode}`);
                 break;
         }
     }
@@ -388,7 +398,7 @@ class MyWebSocket extends MySocket {
     /**
      * @param {(ws : MyWebSocket, code: number, reason: string)=>{}} cb 
      */
-    onClientClose(cb) {
+    onceClientClose(cb) {
         this.on(MyWebSocket.LISTENER_CLIENTCLOSE, cb);
     }
 

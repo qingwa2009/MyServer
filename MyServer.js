@@ -8,7 +8,7 @@ const Assert = require('assert');
 const MyUtil = require('./MyUtil');
 const MyFileManager = MyUtil.MyFileManager;
 
-const { IMyServer, IMyServerSetting, HttpConst, MyHttpRequest, MyHttpResponse, MySocket, MyWebSocket } = require('./MyHttp');
+const { IMyServer, IMyServerSetting, HttpConst, MyHttpRequest, MyHttpResponse, MySocket, MyWebSocket, IMyWebSocketHandler } = require('./MyHttp');
 const RESP_CLASS_LIST = require('./MyResponses');
 const WEBSOCKET_HANDLER_LIST = require('./MyWebSocketHandlers');
 
@@ -28,7 +28,6 @@ module.exports = class MyServer extends IMyServer {
             MyUtil.setWebLogger(WEBSOCKET_HANDLER_LIST.get('/weblog'));
     }
 
-
     start() {
         this.server.listen(this.websiteSetting.port, this.websiteSetting.ip);
     }
@@ -41,7 +40,11 @@ module.exports = class MyServer extends IMyServer {
     }
 
     async status() {
-        return await this.fm.toString();
+        const st = {};
+        st['socketCount'] = this.socketCount;
+        st['fileManager'] = await this.fm.status();
+        st['webSocket'] = WEBSOCKET_HANDLER_LIST.status();
+        return JSON.stringify(st);
     }
 
 
@@ -57,7 +60,7 @@ module.exports = class MyServer extends IMyServer {
      * @param {Net.Socket} sock 
      */
     _OnConnection(sock) {
-        MySocket.decorate(sock);
+        MySocket.decorate(sock, this);
     }
     /**
      * @param {Error} err 
@@ -171,6 +174,7 @@ module.exports = class MyServer extends IMyServer {
         MyUtil.LOG(sock.toString(), "upgrading to websocket...");
         const ws = MyWebSocket.handshake(req, sock, head);
         if (ws) wshandler.add(ws);
+        this.notifyStatusChange();
     }
 }
 

@@ -14,14 +14,14 @@ class MyFileManager {
     /**@type {Map<string, Promise<MyFileManager.MyFileWriteStream>>}*/
     _writingStreams = new Map();
 
-    async toValue() {
+    async status() {
         const rs = [];
         for (const [_, v] of this._readingfds) {
-            rs.push((await v).toValue());
+            rs.push((await v).status());
         }
         const ws = [];
         for (const [_, v] of this._writingStreams) {
-            ws.push((await v).toValue());
+            ws.push((await v).status());
         }
 
         return {
@@ -33,7 +33,7 @@ class MyFileManager {
     }
 
     async toString() {
-        return JSON.stringify(await this.toValue());
+        return JSON.stringify(await this.status());
     }
 
     /**
@@ -324,11 +324,11 @@ MyFileManager.MyFileWriteStream = class MyFileWriteStream extends FS.WriteStream
     /**
      * @returns {{path: string}}
      */
-    toValue() {
+    status() {
         return { path: this.path };
     }
     toString() {
-        return JSON.stringify(this.toValue());
+        return JSON.stringify(this.status());
     }
 }
 
@@ -462,13 +462,13 @@ MyFileManager.MyFileHandle = class MyFileHandle {
     }
 
     toString() {
-        return JSON.stringify(this.toValue());
+        return JSON.stringify(this.status());
     }
 
     /**
      * @returns {{path: string, fd: number, ref: number}}
      */
-    toValue() {
+    status() {
         return { path: this.path, fd: this.fd, ref: this._refCount }
     }
 }

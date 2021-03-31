@@ -484,15 +484,47 @@ function testV8() {
 
 }
 
-// testEvent();
+testEvent();
 function testEvent() {
+    // class MyEvent extends Events.EventEmitter { }
+    // var e = new MyEvent();
+    // process.nextTick(() => {
+    //     e.emit('lala');
+    // })
+
+    // e.once('lala', () => { console.log('lala', this) });
     class MyEvent extends Events.EventEmitter { }
     var e = new MyEvent();
-    process.nextTick(() => {
-        e.emit('lala');
-    })
+    e.on('e', v => console.log(v));
+    e.emit('e', 1);
+    e.emit('e', 2);
 
-    e.once('lala', () => { console.log('lala', this) });
+    class MyEvent2 extends Events.EventEmitter {
+
+        _isEmitted = false;
+        _i = 0;
+        constructor() {
+            super();
+        }
+        notify() {
+            if (this._isEmitted) return;
+            this._isEmitted = true;
+            process.nextTick(() => {
+                this.emit('e', 1);
+                this._isEmitted = false;
+            });
+        }
+        onChange(cb) {
+            this.on('e', cb);
+        }
+    }
+    var e2 = new MyEvent2();
+    e2.onChange(v => console.log(v));
+    e2.notify();
+    e2.notify();
+    e2.notify();
+    e2.notify();
+
 }
 
 // testUpload();
@@ -668,7 +700,8 @@ function testStringDecoder() {
 
 }
 
-lala();
+
+// lala();
 async function lala() {
     // const MyUtil = require('./MyUtil');
     // console.log(MyUtil.ENABLE_LOG);
@@ -699,4 +732,12 @@ async function lala() {
     const bb = Buffer.allocUnsafe(3);
     buf.copy(bb, 0, 3);
     console.log(bb);
+
+
+    const WEBSOCKET_HANDLER_LIST = require('./MyWebSocketHandlers');
+    console.log(WEBSOCKET_HANDLER_LIST);
+    const props = Object.getOwnPropertyNames(WEBSOCKET_HANDLER_LIST);
+    console.log(props);
+    console.log(typeof WEBSOCKET_HANDLER_LIST.get(props[0]));
+    console.log(JSON.stringify(WEBSOCKET_HANDLER_LIST.status()));
 }

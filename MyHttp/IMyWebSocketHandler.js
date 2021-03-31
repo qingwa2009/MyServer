@@ -1,10 +1,12 @@
 'user strict';
 const Assert = require('assert');
 const MyWebSocket = require('./MyWebSocket');
+const IMyServer = require('./IMyServer');
 const { LOG, WARN, ERROR } = require('../MyUtil');
 module.exports = class IMyWebSocketHandler {
     /**@type {Map<MyWebSocket , MyWebSocket>} */
     _websockets = new Map();
+
     /**
      * @param {MyWebSocket} ws 
      */
@@ -15,7 +17,7 @@ module.exports = class IMyWebSocketHandler {
         ws.once('close', hasErr => this.remove(ws));
         ws.once('error', err => this._onError(ws, err));
         ws.onMessage(this._onMessage.bind(this));
-        ws.onClientClose(this._onClientClose.bind(this));
+        ws.onceClientClose(this._onClientClose.bind(this));
         this._setupWebSocket(ws);
     }
     /**
@@ -29,7 +31,7 @@ module.exports = class IMyWebSocketHandler {
         this._websockets.clear()
     }
 
-    count() {
+    get count() {
         return this._websockets.size;
     }
 
@@ -56,6 +58,7 @@ module.exports = class IMyWebSocketHandler {
         WARN(ws.toString(), 'client closed', code, reason);
     }
     /**
+     * client强行关闭时会有read ECONNRESET的错误，_onClientClose会收到1001 (WS_CLOSE_GOING_AWAY)
      * @param {MyWebSocket} ws 
      * @param {NodeJS.ErrnoException} err
      */
