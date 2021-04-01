@@ -31,10 +31,7 @@ module.exports = class RespUploadDownload extends MyHttpResponse {
 
         const del = req.querys[RespUploadDownload.CMD_DEL];
         if (del) {
-            if (typeof del !== 'string') {
-                this.respError(req, 400, `query '${RespUploadDownload.CMD_DEL}' is not string or is array`);
-                return;
-            }
+            if (!this.checkQueryIsStr(req, del, RespUploadDownload.CMD_DEL)) return;
             const path = Path.join(server.websiteSetting.upload_folder, decodeURI(del));
             this.handleDeleteFile(req, server, path);
             return;
@@ -45,6 +42,8 @@ module.exports = class RespUploadDownload extends MyHttpResponse {
             this.handleGetFileList(req, server, server.websiteSetting.upload_folder);
             return;
         } else {
+            if (!this.checkQueryIsStr(req, f, RespUploadDownload.CMD_FILE)) return;
+
             const path = Path.join(server.websiteSetting.upload_folder, decodeURI(f));
             this.handleGetFile(req, server, path);
             return;
@@ -61,7 +60,7 @@ module.exports = class RespUploadDownload extends MyHttpResponse {
     handleDeleteFile(req, server, path) {
         server.fm.deleteFile(path).then(
             () => {
-                this.respError(req, 200);
+                this.respString(req, 200);
             },
             err => {
                 this.respError(req, 500, err.message);

@@ -1,6 +1,8 @@
 'user strict';
 const Assert = require('assert');
 const MyWebSocket = require('./MyWebSocket');
+const MyHttpRequest = require('./MyHttpRequest');
+const MySocket = require('./MySocket');
 const IMyServer = require('./IMyServer');
 const { LOG, WARN, ERROR } = require('../MyUtil');
 module.exports = class IMyWebSocketHandler {
@@ -35,6 +37,12 @@ module.exports = class IMyWebSocketHandler {
         return this._websockets.size;
     }
 
+    *eachWebSocket() {
+        for (const ws of this._websockets.values()) {
+            yield ws;
+        }
+    }
+
     /**
      * 在添加WebSocket时对其进行设定
      * @param {MyWebSocket} ws 
@@ -63,6 +71,16 @@ module.exports = class IMyWebSocketHandler {
      * @param {NodeJS.ErrnoException} err
      */
     _onError(ws, err) {
+        Assert(false, '必须重载该函数');
+    }
+
+    /**
+     * 权限检查，通过返回true，否则返回false
+     * @param {MySocket} sock
+     * @param {MyHttpRequest} req
+     * @returns {boolean} 
+     * */
+    _privilegeCheck(sock, req) {
         Assert(false, '必须重载该函数');
     }
 

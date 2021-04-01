@@ -28,7 +28,6 @@ class MyHttpResponse extends Http.ServerResponse {
     }
     /**
      * @param {MyHttpRequest} req 
-     * @param {MyHttpResponse} resp 
      * @param {Number} statusCode 
      * @param {String} str 
      */
@@ -48,12 +47,23 @@ class MyHttpResponse extends Http.ServerResponse {
 
     /**
      * @param {MyHttpRequest} req 
-     * @param {MyHttpResponse} resp 
      * @param {Number} statusCode 
      * @param {String} errstr 
      */
     respError(req, statusCode, errstr) {
         this.respString(req, statusCode, errstr);
+    }
+
+
+    /**
+     * 暂停接收流并响应错误
+     * @param {MyHttpRequest} req 
+     * @param {Number} statusCode 
+     * @param {String} errstr 
+     */
+    respErrorAndPauseRecvStream(req, statusCode, errstr) {
+        req.on('readable', () => req.pause());      //停止接收
+        this.respError(req, statusCode, errstr);    //client收不到这条消息，估计client不是全双工-_-!!!
     }
 
     /**
@@ -139,6 +149,38 @@ class MyHttpResponse extends Http.ServerResponse {
     }
 
     /**
+     * 检查query是否string，不匹配将自动回复400错误，并返回false
+     * @param {MyHttpRequest} req
+     * @param {string} query
+     * @param {string} queryname 用于响应时提示client那个query类型错误     
+     * @returns {boolean} 
+     */
+    checkQueryIsStr(req, query, queryname) {
+        if (typeof query !== 'string') {
+            this.respError(req, 400, `query type error：'${queryname}' must be string`);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 检查query是否array，不匹配将自动回复400错误，并返回false
+     * @param {MyHttpRequest} req
+     * @param {string[]} query
+     * @param {string} queryname 用于响应时提示client那个query类型错误     
+     * @returns {boolean} 
+     */
+    checkQueryIsArray(req, query, queryname) {
+        if (!Array.isArray(query)) {
+            this.respError(req, 400, `query type error：'${queryname}' must be array`);
+            return false;
+        }
+        return true;
+    }
+
+
+
+    /**
      * 自动处理上传文件的请求
      * @param {MyHttpRequest} req 
      * @param {IMyServer} server 
@@ -164,15 +206,14 @@ class MyHttpResponse extends Http.ServerResponse {
                         }
                         return;
                     }
-                    this.respError(req, 200);
+                    this.respString(req, 200);
                 });
             },
             err => {
                 // if (_ws)
                 //     req.unpipe(_ws);
                 // req.pause();                             //没效果过，辣鸡                                
-                req.on('readable', () => req.pause());      //停止接收
-                this.respError(req, 500, err.toString());   //client收不到这条消息，估计client不是全双工-_-!!!
+                this.respErrorAndPauseRecvStream(req, 500, err.toString());
                 this.once('finish', () =>
                     req.destroy()
                 );
@@ -194,8 +235,6 @@ class MyHttpResponse extends Http.ServerResponse {
         //     //底层链接已关闭，socket已经设为null了
         // });
     }
-
-
 
 
     static _decorate() {

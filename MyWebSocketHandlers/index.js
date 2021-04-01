@@ -1,6 +1,14 @@
 'use strict';
 const { IMyWebSocketHandler } = require('../MyHttp')
 module.exports = {
+    '/sample': require('./WSSample'),
+    '/weblog': require('./WSLogger'),
+    '/multiplayer': require('./WSMultiplayer'),
+    '/status': require('./WSServerStatus'),
+    '/exportxb': require('./WSExportxb'),
+
+
+
     /**
      * @param {string} url 
      * @returns {IMyWebSocketHandler}
@@ -21,9 +29,5 @@ module.exports = {
             }
         }
         return st;
-    },
-    '/sample': require('./WSSample'),
-    '/weblog': require('./WSLogger'),
-    '/multiplayer': require('./WSMultiplayer'),
-    '/status': require('./WSServerStatus'),
+    }
 }

@@ -40,7 +40,7 @@ class MyHttpRequest extends Http.IncomingMessage {
         WARN(this.toString(), this.method, this.url, this.query);
     }
     /**
-     * @returns {QueryString.ParsedUrlQuery} { [key: string]: string | string[]; }
+     * @returns {{ [key : string] : string | string[]}} 
      */
     get querys() {
         return this._querys || (this._querys = QueryString.parse(this.query));
@@ -52,6 +52,15 @@ class MyHttpRequest extends Http.IncomingMessage {
 
     _onClientError() {
         // this.destroy(new Error('Client Error'));
+    }
+
+    /**
+     * @param {(datas : Buffer[])=>{}} cb 
+     */
+    onceReqBodyRecvComplete(cb) {
+        const datas = [];
+        this.on('data', chunk => datas.push(chunk));
+        this.on('end', () => cb(datas));
     }
 
     /**

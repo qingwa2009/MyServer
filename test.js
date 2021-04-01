@@ -484,7 +484,7 @@ function testV8() {
 
 }
 
-testEvent();
+// testEvent();
 function testEvent() {
     // class MyEvent extends Events.EventEmitter { }
     // var e = new MyEvent();
@@ -698,6 +698,43 @@ function testStringDecoder() {
     console.log(dec.write(Buffer.from([255, 255, 220, 120, 97, 98, 99])));
     console.log(dec.end());
 
+}
+
+// testJSON();
+function testJSON() {
+    try {
+        const s = JSON.parse("{");
+        console.log(s);
+    } catch (error) {
+
+    }
+
+    const querys = querystring.parse('a=1&a=2');
+    console.log(Array.isArray(querys['a']));
+
+    const datas = [];
+    datas.push(Buffer.from('["abc'));
+    datas.push(Buffer.from('def"]'));
+
+    console.log(JSON.parse(datas));
+
+    console.log(datas.join(''));
+
+}
+
+testIterator2();
+function testIterator2() {
+    function* it() {
+        for (let i = 0; i < 10; i++) {
+            yield i;
+        }
+    }
+
+    for (const i of it()) {
+        for (const j of it()) {
+            console.log(i, j)
+        }
+    }
 }
 
 

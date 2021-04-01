@@ -5,6 +5,7 @@ const Net = require('net');
 const { StringDecoder } = require('string_decoder');
 const MySocket = require('./MySocket');
 const MyHttpRequest = require('./MyHttpRequest');
+const IMyWebSocketHandler = require('./IMyWebSocketHandler');
 const HttpConst = require('./HttpConst');
 
 const { LOG, WARN, ERROR } = require('../MyUtil');
@@ -488,9 +489,10 @@ MyWebSocket.handshake =
     * @param {MyHttpRequest} req 
     * @param {MySocket} sock 
     * @param {Buffer} head 
+    * @param {IMyWebSocketHandler} wshandler 用于权限检查
     * @returns {void | MyWebSocket}
     */
-    function (req, sock, head) {
+    function (req, sock, head, wshandler) {
         const key = req.headers[HttpConst.HEADER["Sec-WebSocket-Key"]];
         let protocol = req.headers[HttpConst.HEADER["Sec-WebSocket-Protocol"]];
 
@@ -505,6 +507,13 @@ MyWebSocket.handshake =
             sock.end();
             return;
         }
+
+        if (!wshandler._privilegeCheck(sock, req)) {
+            WARN(sock.toString(), "privilegeCheck failed!");
+            sock.end();
+            return;
+        }
+
         //取第一个协议
         protocol = protocol.split(",")[0];
 
@@ -517,7 +526,6 @@ MyWebSocket.handshake =
         sock.write("\r\n");
 
         MyWebSocket.decorate(sock, protocol, head);
-
         return sock;
     }
 

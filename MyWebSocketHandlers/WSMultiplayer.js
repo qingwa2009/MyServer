@@ -1,5 +1,5 @@
 'use strict';
-const { IMyWebSocketHandler, MyWebSocket } = require('../MyHttp');
+const { IMyWebSocketHandler, MyWebSocket, MyHttpRequest, MySocket } = require('../MyHttp');
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 const P_ID = "id"
@@ -95,6 +95,16 @@ class WSMultiplayer extends IMyWebSocketHandler {
             if (ws === ws0) continue;
             ws0.send(msg);
         }
+    }
+
+    /**
+     * 权限检查，通过返回true，否则返回false
+     * @param {MySocket} sock
+     * @param {MyHttpRequest} req
+     * @returns {boolean} 
+     * */
+    _privilegeCheck(sock, req) {
+        return true;
     }
 
 }

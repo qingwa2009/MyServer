@@ -1,6 +1,6 @@
 'use strict';
 const Assert = require('assert');
-const { IMyWebSocketHandler, MyWebSocket, IMyServer } = require('../MyHttp');
+const { IMyWebSocketHandler, MyWebSocket, IMyServer, MyHttpRequest, MySocket } = require('../MyHttp');
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 
@@ -45,6 +45,16 @@ class WSServerStatus extends IMyWebSocketHandler {
      */
     _onError(ws, err) {
         WARN(err);
+    }
+
+    /**
+     * 权限检查，通过返回true，否则返回false
+     * @param {MySocket} sock
+     * @param {MyHttpRequest} req
+     * @returns {boolean} 
+     * */
+    _privilegeCheck(sock, req) {
+        return true;
     }
 }
 module.exports = new WSServerStatus();

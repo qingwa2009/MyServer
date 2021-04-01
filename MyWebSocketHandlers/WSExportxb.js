@@ -1,16 +1,30 @@
 'use strict';
+const FS = require('fs');
+const Path = require('path');
 const { IMyWebSocketHandler, MyWebSocket, MyHttpRequest, MySocket } = require('../MyHttp');
-const { LOG, WARN, ERROR, IMyWebLogger } = require('../MyUtil');
+const { LOG, WARN, ERROR } = require('../MyUtil');
 
-class WSLogger extends IMyWebSocketHandler {
-
+const watchFolder = "/upload/";
+class WSExportxb extends IMyWebSocketHandler {
+    /**@type {FS.FSWatcher} */
+    watcher = null
     /**
      * 在添加WebSocket时对其进行设定
      * @param {MyWebSocket} ws 
      */
     _setupWebSocket(ws) {
+        ws.maxFrameLength = 125;
+        if (this.watcher === null) {
+            const path = Path.join(ws._myServer.websiteSetting.root, watchFolder);
+            this.watcher = FS.watch(path);
+            this.watcher.on('change', () => this.notifyFolderChange());
+        }
+    }
 
-        ws.maxFrameLength = 256;
+    notifyFolderChange() {
+        for (const ws of this.eachWebSocket()) {
+            ws.send('更新列表');//没啥用，只是通知一下，懒得改前端了
+        }
     }
 
     /**
@@ -29,19 +43,7 @@ class WSLogger extends IMyWebSocketHandler {
      * @param {NodeJS.ErrnoException} err
      */
     _onError(ws, err) {
-        console.log(err);
-    }
-
-    //重载IMyWebLogger
-    /**@param {string} msg */
-    send(msg) {
-        for (const ws of this._websockets.values()) {
-            const tag = Object.getPrototypeOf(MyWebSocket.prototype).toString.call(ws);
-            if (msg.includes(tag)) return;//过滤掉weblog socket的log信息
-        }
-        for (const ws of this._websockets.values()) {
-            ws.send(msg);
-        }
+        WARN(err);
     }
 
     /**
@@ -53,7 +55,5 @@ class WSLogger extends IMyWebSocketHandler {
     _privilegeCheck(sock, req) {
         return true;
     }
-
 }
-
-module.exports = new WSLogger();
+module.exports = new WSExportxb();

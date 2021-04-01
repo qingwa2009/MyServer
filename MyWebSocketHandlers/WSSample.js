@@ -1,5 +1,5 @@
 'use strict';
-const { IMyWebSocketHandler, MyWebSocket } = require('../MyHttp');
+const { IMyWebSocketHandler, MyWebSocket, MyHttpRequest, MySocket } = require('../MyHttp');
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 
@@ -30,6 +30,16 @@ class WSSamples extends IMyWebSocketHandler {
      */
     _onError(ws, err) {
         WARN(err);
+    }
+
+    /**
+     * 权限检查，通过返回true，否则返回false
+     * @param {MySocket} sock
+     * @param {MyHttpRequest} req
+     * @returns {boolean} 
+     * */
+    _privilegeCheck(sock, req) {
+        return true;
     }
 }
 module.exports = new WSSamples();
