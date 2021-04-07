@@ -35,9 +35,11 @@ class WSServerStatus extends IMyWebSocketHandler {
      * @param {string | Buffer} msg 
      */
     _onMessage(ws, msg) {
-        // console.log(msg);
+        // console.log(msg);        
         this._onServerStatusChange();
     }
+
+
 
     /**
      * @param {MyWebSocket} ws 

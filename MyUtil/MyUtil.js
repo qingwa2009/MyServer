@@ -5,14 +5,37 @@ const IMyWebLogger = require('./IMyWebLogger');
 let ENABLE_LOG = false;
 let ENABLE_WARN = true;
 let ENABLE_ERROR = true;
+let ENABLE_WEBLOG = true;
 /**@type {IMyWebLogger} */
 let WEB_LOGGER = undefined;
 
-Object.defineProperties(exports, {
-    ENABLE_LOG: { get: () => ENABLE_LOG, set: val => ENABLE_LOG = val },
-    ENABLE_WARN: { get: () => ENABLE_WARN, set: val => ENABLE_WARN = val },
-    ENABLE_ERROR: { get: () => ENABLE_ERROR, set: val => ENABLE_ERROR = val },
-});
+exports.setEnableLog = function (b) {
+    ENABLE_LOG = b;
+}
+exports.setEnableWarn = function (b) {
+    ENABLE_WARN = b;
+}
+exports.setEnableError = function (b) {
+    ENABLE_ERROR = b;
+}
+exports.setEnableWeblog = function (b) {
+    ENABLE_WEBLOG = b;
+}
+
+exports.getEnableLog = function () {
+    return ENABLE_LOG;
+}
+exports.getEnableWarn = function () {
+    return ENABLE_WARN;
+}
+exports.getEnableError = function () {
+    return ENABLE_ERROR;
+}
+exports.getEnableWeblog = function () {
+    return ENABLE_WEBLOG;
+}
+
+
 
 exports.setWebLogger = function (/**@type {IMyWebLogger} */wg) {
     WEB_LOGGER = wg;
@@ -53,7 +76,7 @@ function LOG(message, ...params) {
     if (ENABLE_LOG) {
         const s = `${now()}\tinfo ${message}`;
         console.log(s, ...params);
-        if (WEB_LOGGER) {
+        if (ENABLE_WEBLOG && WEB_LOGGER) {
             params.unshift(s);
             WEB_LOGGER.send(params.join('\t'));
         }
@@ -65,7 +88,7 @@ function WARN(message, ...params) {
     if (ENABLE_WARN) {
         const s = `${now()}\twarn ${message}`;
         console.log(s, ...params);
-        if (WEB_LOGGER) {
+        if (ENABLE_WEBLOG && WEB_LOGGER) {
             params.unshift(s);
             WEB_LOGGER.send(params.join('\t'));
         }
@@ -76,7 +99,7 @@ function ERROR(message, ...params) {
     if (ENABLE_ERROR) {
         const s = `${now()}\terror ${message}`;
         console.log(s, ...params);
-        if (WEB_LOGGER) {
+        if (ENABLE_WEBLOG && WEB_LOGGER) {
             params.unshift(s);
             WEB_LOGGER.send(params.join('\t'));
         }

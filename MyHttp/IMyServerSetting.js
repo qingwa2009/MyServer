@@ -7,7 +7,8 @@ module.exports = class IMyServerSetting {
     /**网站主页面 */
     main_page = "indx.html";
     /**网站端口 */
-    port = 80;
+    http_port = 80;
+    https_port = 443;
     /**网站ip */
     ip = "localhost";
     /**是否启用websocket接受调试信息 */

@@ -14,7 +14,7 @@ module.exports = class IMyWebSocketHandler {
      */
     add(ws) {
         this._websockets.set(ws, ws);
-        ws.setKeepAlive(true);//打开KeepAlive
+        // ws.setKeepAlive(true);//打开KeepAlive
         ws.setTimeout(0);//不设置超时
         ws.once('close', hasErr => this.remove(ws));
         ws.once('error', err => this._onError(ws, err));

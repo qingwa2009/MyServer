@@ -18,18 +18,19 @@ module.exports = class MyServer extends IMyServer {
      * 
      * @param {IMyServerSetting} websiteSetting 
      */
-    constructor(websiteSetting) {
-        super();
+    constructor(websiteSetting, httpsOptions = undefined) {
+        super(httpsOptions);
         this.websiteSetting = websiteSetting;
-        MyUtil.ENABLE_LOG = this.websiteSetting.debug_log;
-        MyUtil.ENABLE_WARN = this.websiteSetting.debug_warn;
-        MyUtil.ENABLE_ERROR = this.websiteSetting.debug_error;
+        MyUtil.setEnableLog(this.websiteSetting.debug_log);
+        MyUtil.setEnableWarn(this.websiteSetting.debug_warn);
+        MyUtil.setEnableError(this.websiteSetting.debug_error);
+        MyUtil.setEnableWeblog(this.websiteSetting.enable_web_log);
         if (this.websiteSetting.enable_web_log)
             MyUtil.setWebLogger(WEBSOCKET_HANDLER_LIST.get('/weblog'));
     }
 
     start() {
-        this.server.listen(this.websiteSetting.port, this.websiteSetting.ip);
+        this.server.listen(this.isHttps ? this.websiteSetting.https_port : this.websiteSetting.http_port, this.websiteSetting.ip);
     }
 
     stop() {
@@ -44,6 +45,7 @@ module.exports = class MyServer extends IMyServer {
         st['socketCount'] = this.socketCount;
         st['fileManager'] = await this.fm.status();
         st['webSocket'] = WEBSOCKET_HANDLER_LIST.status();
+        st['debug'] = { log: MyUtil.getEnableLog(), warn: MyUtil.getEnableWarn(), error: MyUtil.getEnableError(), weblog: MyUtil.getEnableWeblog() };
         return JSON.stringify(st);
     }
 
@@ -56,12 +58,21 @@ module.exports = class MyServer extends IMyServer {
     _OnClose() {
         MyUtil.WARN(`${this.toString()} closed!`);
     }
+
     /**
      * @param {Net.Socket} sock 
      */
     _OnConnection(sock) {
         MySocket.decorate(sock, this);
     }
+
+    /**
+     * @param {TLS.TLSSocket} sock 
+     */
+    _OnSecureConnection(sock) {
+        MySocket.decorate(sock, this);
+    }
+
     /**
      * @param {Error} err 
      * @param {Net.Socket} sock 

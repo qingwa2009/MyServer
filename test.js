@@ -5,7 +5,7 @@ const Http = require('http');
 const Events = require('events');
 const Url = require("url");
 const { promisify } = require("util");
-const { MyHttpRequest } = require('./MyHttp');
+const { MyHttpRequest, MySocket } = require('./MyHttp');
 const MyUtil = require("./MyUtil");
 const { MyFileManager } = require("./MyUtil");
 
@@ -722,7 +722,7 @@ function testJSON() {
 
 }
 
-testIterator2();
+// testIterator2();
 function testIterator2() {
     function* it() {
         for (let i = 0; i < 10; i++) {
@@ -735,6 +735,51 @@ function testIterator2() {
             console.log(i, j)
         }
     }
+}
+
+testHttps();
+function testHttps() {
+    var https = require('https');
+    const k = fs.readFileSync("./SSL/server.key");
+    const c = fs.readFileSync("./SSL/server.pem");
+    const server = https.createServer({ key: k, cert: c });
+    const Net = require('net');
+    const TLS = require('tls');
+    Object.setPrototypeOf(TLS.TLSSocket.prototype, MySocket.prototype);
+
+    server.listen(443);
+    // server.on("OCSPRequest", (cert, issuer, cb) => {
+    //     console.log("-------------OCSPRequest");
+    //     console.log(cert, issuer, cb);
+    // })
+    // server.on("newSession", (sessionId, sessionData, cb) => {
+    //     console.log("-------------newSession");
+    //     console.log(sessionId, sessionData, cb);
+    // })
+    // server.on("resumeSession", (sessionId, cb) => {
+    //     console.log("-------------resumeSession");
+    //     console.log(sessionId, cb);
+    // })
+    server.on("secureConnection", (tlsSocket) => {
+        console.log("-------------secureConnection");
+        console.log(tlsSocket);
+        console.log(tlsSocket instanceof TLS.TLSSocket);
+        console.log(tlsSocket instanceof MySocket);
+        console.log(tlsSocket instanceof Net.Socket);
+    })
+    // server.on("tlsClientError", (err, tlsSocket) => {
+    //     console.log("-------------tlsClientError");
+    //     console.log(err, tlsSocket);
+    // })
+
+
+    server.on("request", (req, resp) => {
+
+        console.log("-------------request");
+        console.log(req, resp);
+    });
+
+
 }
 
 

@@ -1,5 +1,7 @@
 'use strict';
 const Http = require('http');
+const Https = require("https");
+const TLS = require('tls');
 const Assert = require('assert');
 const { EventEmitter } = require('events');
 const IMyServerSetting = require('./IMyServerSetting');
@@ -8,12 +10,21 @@ const { MyFileManager } = require('../MyUtil');
 module.exports = class IMyServer extends EventEmitter {
     websiteSetting = new IMyServerSetting();
     fm = new MyFileManager();
-    server = Http.createServer();
+    /**@type {Http.Server | Https.Server} */
+    server = null;
+    isHttps = false;
     socketCount = 0;
     _isStatusChange = false;
 
-    constructor() {
+    constructor(httpsOptions = undefined) {
         super();
+        if (httpsOptions) {
+            this.server = Https.createServer(httpsOptions);
+            this.isHttps = true;
+            this.server.on("secureConnection", this._OnSecureConnection.bind(this));
+        } else {
+            this.server = Http.createServer();
+        }
         this.server.on('request', this._OnRequest.bind(this));
         this.server.on("listening", this._OnListening.bind(this));
         this.server.on("connection", this._OnConnection.bind(this));
@@ -58,6 +69,14 @@ module.exports = class IMyServer extends EventEmitter {
      * @param {Net.Socket} sock 
      */
     _OnConnection(sock) {
+        // MySocket.decorate(sock, this);
+        Assert(false, '必须重载该函数');
+    }
+    /**
+     * @param {TLS.TLSSocket} sock 
+     */
+    _OnSecureConnection(sock) {
+        // MySocket.decorate(sock, this);
         Assert(false, '必须重载该函数');
     }
     /**

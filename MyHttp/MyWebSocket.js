@@ -82,9 +82,14 @@ class MyWebSocket extends MySocket {
      * @param {Buffer} head 
      */
     static _decorate(protocol, head) {
-        Assert(!(this instanceof MyWebSocket));
-        Assert(this instanceof MySocket);
-        Object.setPrototypeOf(this, MyWebSocket.prototype);
+        Assert(!(this instanceof MyWebSocket || this instanceof MyWebSockets));
+        Assert(this instanceof MySocket || this instanceof MySocket.MySockets);
+        if (this instanceof MySocket) {
+            Object.setPrototypeOf(this, MyWebSocket.prototype);
+        } else {
+            Object.setPrototypeOf(this, MyWebSockets.prototype);
+        }
+
         WARN(this.toString(), "upgraded!");
 
         this._init();
@@ -539,3 +544,9 @@ MyWebSocket.calcAcceptKey =
         hash.update(s);
         return hash.digest('base64');
     }
+
+
+class MyWebSockets extends MySocket.MySockets { }
+Object.defineProperties(MyWebSockets.prototype, Object.getOwnPropertyDescriptors(MyWebSocket.prototype));
+
+MyWebSocket.MyWebSockets = MyWebSockets;

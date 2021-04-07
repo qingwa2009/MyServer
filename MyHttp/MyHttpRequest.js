@@ -3,7 +3,8 @@ const Http = require('http');
 const Assert = require('assert');
 const QueryString = require('querystring');
 const MySocket = require('./MySocket');
-const { LOG, WARN, ERROR, ENABLE_LOG } = require('../MyUtil');
+const MyUtil = require('../MyUtil');
+const { LOG, WARN, ERROR } = MyUtil;
 
 //==========MyHttpRequest==========
 class MyHttpRequest extends Http.IncomingMessage {
@@ -27,7 +28,7 @@ class MyHttpRequest extends Http.IncomingMessage {
         this.url = pq.path;
         this.query = pq.query;
 
-        if (ENABLE_LOG) {
+        if (MyUtil.getEnableLog()) {
             const h = [];
             for (let i = 0; i < this.rawHeaders.length; i += 2) {
                 h.push(this.rawHeaders[i]);
