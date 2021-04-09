@@ -5,7 +5,7 @@ module.exports = {
     '/uploaddownload': require('./RespUploadDownload'),//
     '/exportxbfilelist': require('./RespExportXBFlieList'),
     '/exportxbupload': require('./RespExportXBUpload'),
-
+    '/restart': require('./RespRestart'),
 
 
 

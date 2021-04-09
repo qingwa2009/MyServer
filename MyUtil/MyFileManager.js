@@ -15,13 +15,15 @@ class MyFileManager {
     _writingStreams = new Map();
 
     async status() {
-        const rs = [];
+        const rs = { title: ['fd', 'ref count', 'path'], data: [] };
         for (const [_, v] of this._readingfds) {
-            rs.push((await v).status());
+            const ss = (await v).status();
+            rs.data.push([ss.fd, ss.ref, ss.path]);
         }
-        const ws = [];
+        const ws = { title: ['path'], data: [] };
         for (const [_, v] of this._writingStreams) {
-            ws.push((await v).status());
+            const ss = (await v).status();
+            ws.data.push([ss.path]);
         }
 
         return {

@@ -74,7 +74,7 @@ exports.extractUrlFolderPart =
 exports.LOG = LOG;
 function LOG(message, ...params) {
     if (ENABLE_LOG) {
-        const s = `${now()}\tinfo ${message}`;
+        const s = `${now()}\tinfo\t${message}`;
         console.log(s, ...params);
         if (ENABLE_WEBLOG && WEB_LOGGER) {
             params.unshift(s);
@@ -86,7 +86,7 @@ function LOG(message, ...params) {
 exports.WARN = WARN;
 function WARN(message, ...params) {
     if (ENABLE_WARN) {
-        const s = `${now()}\twarn ${message}`;
+        const s = `${now()}\twarn\t${message}`;
         console.log(s, ...params);
         if (ENABLE_WEBLOG && WEB_LOGGER) {
             params.unshift(s);
@@ -97,7 +97,7 @@ function WARN(message, ...params) {
 exports.ERROR = ERROR;
 function ERROR(message, ...params) {
     if (ENABLE_ERROR) {
-        const s = `${now()}\terror ${message}`;
+        const s = `${now()}\terror\t${message}`;
         console.log(s, ...params);
         if (ENABLE_WEBLOG && WEB_LOGGER) {
             params.unshift(s);

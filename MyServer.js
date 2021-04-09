@@ -30,13 +30,19 @@ module.exports = class MyServer extends IMyServer {
     }
 
     start() {
-        this.server.listen(this.isHttps ? this.websiteSetting.https_port : this.websiteSetting.http_port, this.websiteSetting.ip);
+        this.port = this.isHttps ? this.websiteSetting.https_port : this.websiteSetting.http_port;
+        this.ip = this.websiteSetting.ip;
+        this.server.listen(this.port, this.ip);
     }
 
+    /**所有连接都关闭时才会触发close事件 */
     stop() {
-        this.server.close(err => {
-            if (err) ERROR(this.toString(), err.stack);
-            this.fm.releaseAllFileReading();
+        return new Promise((res, rej) => {
+            this.server.close(err => {
+                if (err) ERROR(this.toString(), err.stack);
+                this.fm.releaseAllFileReading();
+                res();
+            });
         });
     }
 
@@ -51,12 +57,14 @@ module.exports = class MyServer extends IMyServer {
 
 
     _OnListening() {
-        console.log(this);
+        const addr = this.server.address();
+        this.ip = addr.address;
+        this.port = addr.port;
         MyUtil.WARN(`${this.toString()} is listening...`);
     }
 
     _OnClose() {
-        MyUtil.WARN(`${this.toString()} closed!`);
+        MyUtil.WARN(`server ${this.websiteSetting.ip} closed!`);
     }
 
     /**

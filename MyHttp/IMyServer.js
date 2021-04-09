@@ -16,6 +16,8 @@ module.exports = class IMyServer extends EventEmitter {
     socketCount = 0;
     _isStatusChange = false;
 
+    port = 0;
+    ip = '0.0.0.0';
     constructor(httpsOptions = undefined) {
         super();
         if (httpsOptions) {
@@ -50,6 +52,7 @@ module.exports = class IMyServer extends EventEmitter {
     start() {
         Assert(false, '必须重载该函数');
     }
+    /**@returns {Promise<void>} */
     stop() {
         Assert(false, '必须重载该函数');
     }
@@ -109,7 +112,6 @@ module.exports = class IMyServer extends EventEmitter {
     }
 
     toString() {
-        const addr = this.server.address();
-        return `Server ${addr.address}:${addr.port}`;
+        return `Server ${this.ip}:${this.port}`;
     }
 }

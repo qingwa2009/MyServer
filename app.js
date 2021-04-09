@@ -23,7 +23,7 @@ const options = {
     cert: FS.readFileSync("./SSL/server.pem")
 };
 
-// const httpsServer = new MyServer(websiteSetting, options);
-// httpsServer.start();
-const httpServer = new MyServer(websiteSetting);
-httpServer.start();
+const httpsServer = new MyServer(websiteSetting, options);
+httpsServer.start();
+// const httpServer = new MyServer(websiteSetting);
+// httpServer.start();

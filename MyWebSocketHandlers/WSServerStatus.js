@@ -1,7 +1,8 @@
 'use strict';
 const Assert = require('assert');
 const { IMyWebSocketHandler, MyWebSocket, IMyServer, MyHttpRequest, MySocket } = require('../MyHttp');
-const { LOG, WARN, ERROR } = require('../MyUtil');
+const MyUtil = require('../MyUtil')
+const { LOG, WARN, ERROR } = MyUtil;
 
 
 class WSServerStatus extends IMyWebSocketHandler {
@@ -35,7 +36,27 @@ class WSServerStatus extends IMyWebSocketHandler {
      * @param {string | Buffer} msg 
      */
     _onMessage(ws, msg) {
-        // console.log(msg);        
+        // console.log(msg);  
+        try {
+            var json = JSON.parse(msg);
+            const debug = json.debug;
+            if (debug) {
+                if (debug.log !== undefined) {
+                    MyUtil.setEnableLog(!!debug.log);
+                }
+                if (debug.warn !== undefined) {
+                    MyUtil.setEnableWarn(!!debug.warn);
+                }
+                if (debug.error !== undefined) {
+                    MyUtil.setEnableError(!!debug.error);
+                }
+                if (debug.weblog !== undefined) {
+                    MyUtil.setEnableWeblog(!!debug.weblog);
+                }
+            }
+        } catch (error) {
+            // ws.close(MyWebSocket.WS_CLOSE_INVALID_FRAME_PAYLOAD_DATA, "msg must be json!");
+        }
         this._onServerStatusChange();
     }
 
