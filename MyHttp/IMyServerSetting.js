@@ -5,7 +5,7 @@ module.exports = class IMyServerSetting {
     /**上传文件目录，不要位于root的子目录，防止root里面的文件被覆盖 */
     upload_folder = "C:/Users/linjunbin/Desktop/htmlTest/上传下载";
     /**网站主页面 */
-    main_page = "indx.html";
+    main_page = "index.html";
     /**网站端口 */
     http_port = 80;
     https_port = 443;
