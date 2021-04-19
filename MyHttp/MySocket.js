@@ -1,20 +1,46 @@
 'use strict';
+
 const Net = require('net');
 const Assert = require('assert');
 const TLS = require('tls');
-const IMyServer = require('./IMyServer');
+
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 
 //==========MySocket==========
 class MySocket extends Net.Socket {
+
     constructor() {
         Assert(false, "please use decorate!");
     }
-    /**@type {IMyServer} */
-    _myServer = null;
-    /**@param{IMyServer}server */
-    static _decorate(server) {
+
+    toString() {
+        return `${this.remoteAddress}:${this.remotePort}`;
+    }
+
+    _onClose(hasErr) {
+        WARN(this.toString(), "-----closed!-----");
+        this._myServer.socketCount--;
+        this._myServer.notifyStatusChange();
+        this._myServer = null;
+    }
+
+}
+
+module.exports = MySocket;
+
+//防止循环引用bug
+const IMyServer = require('./IMyServer');
+
+/**@type {IMyServer} */
+MySocket.prototype._myServer = null;
+
+MySocket._decorate =
+    /**
+    * @param {Net.Socket} sock 
+    * @param {IMyServer} server
+    */
+    function (server) {
         Assert(!(this instanceof MySocket || this instanceof MySockets));
         Assert(this instanceof Net.Socket);
 
@@ -33,29 +59,16 @@ class MySocket extends Net.Socket {
         }
     }
 
-    toString() {
-        return `${this.remoteAddress}:${this.remotePort}`;
-    }
-
-    _onClose(hasErr) {
-        WARN(this.toString(), "-----closed!-----");
-        this._myServer.socketCount--;
-        this._myServer.notifyStatusChange();
-        this._myServer = null;
-    }
-
-    /**
-     * @param {Net.Socket} sock 
-     * @param {IMyServer} server
-     */
-    static decorate(sock, server) {
+MySocket.decorate =
+    /**@param{IMyServer}server */
+    function (sock, server) {
         MySocket._decorate.call(sock, server);
     }
-}
 
 class MySockets extends TLS.TLSSocket { }
 Object.defineProperties(MySockets.prototype, Object.getOwnPropertyDescriptors(MySocket.prototype));
 
 MySocket.MySockets = MySockets;
 
-module.exports = MySocket;
+
+

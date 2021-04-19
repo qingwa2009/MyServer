@@ -15,11 +15,13 @@ const WEBSOCKET_HANDLER_LIST = require('./MyWebSocketHandlers');
 module.exports = class MyServer extends IMyServer {
 
     /**
-     * 
+     * @param {MyFileManager} fm 
      * @param {IMyServerSetting} websiteSetting 
+     * @param {{key:string, cert:string}} httpsOptions 
      */
-    constructor(websiteSetting, httpsOptions = undefined) {
-        super(httpsOptions);
+
+    constructor(fm, websiteSetting, httpsOptions = undefined) {
+        super(fm, httpsOptions);
         this.websiteSetting = websiteSetting;
         MyUtil.setEnableLog(this.websiteSetting.debug_log);
         MyUtil.setEnableWarn(this.websiteSetting.debug_warn);
@@ -37,10 +39,10 @@ module.exports = class MyServer extends IMyServer {
 
     /**所有连接都关闭时才会触发close事件 */
     stop() {
+        this.fm.releaseAllFileReading();
         return new Promise((res, rej) => {
             this.server.close(err => {
                 if (err) ERROR(this.toString(), err.stack);
-                this.fm.releaseAllFileReading();
                 res();
             });
         });
@@ -70,16 +72,16 @@ module.exports = class MyServer extends IMyServer {
     /**
      * @param {Net.Socket} sock 
      */
-    _OnConnection(sock) {
-        MySocket.decorate(sock, this);
-    }
+    // _OnConnection(sock) {
+    //     MySocket.decorate(sock, this);
+    // }
 
     /**
      * @param {TLS.TLSSocket} sock 
      */
-    _OnSecureConnection(sock) {
-        MySocket.decorate(sock, this);
-    }
+    // _OnSecureConnection(sock) {
+    //     MySocket.decorate(sock, this);
+    // }
 
     /**
      * @param {Error} err 

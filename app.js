@@ -2,15 +2,22 @@
 
 const Assert = require('assert');
 const FS = require('fs');
+const Path = require('path');
 const MyUtil = require('./MyUtil');
 const MyServer = require('./MyServer');
 const { IMyServerSetting } = require('./MyHttp');
 
-const options = {
-    key: FS.readFileSync("./SSL/server.key"),
-    cert: FS.readFileSync("./SSL/server.pem")
-};
+let httpsOptions = null;
+try {
+    httpsOptions = {
+        key: FS.readFileSync(Path.join(__dirname, "/SSL/server.key")),
+        cert: FS.readFileSync(Path.join(__dirname, "/SSL/server.pem"))
+    };
+} catch (error) {
+    MyUtil.ERROR(error);
+}
 
+/**@type {IMyServerSetting} */
 let websiteSetting = null;
 let need2save = false;
 try {
@@ -35,8 +42,14 @@ if (need2save) {
     console.log('websiteSetting saved!');
 }
 
+const fm = new MyUtil.MyFileManager();
 
-const httpsServer = new MyServer(websiteSetting, options);
-httpsServer.start();
-// const httpServer = new MyServer(websiteSetting);
-// httpServer.start();
+if (websiteSetting.https_port && httpsOptions) {
+    const httpsServer = new MyServer(fm, websiteSetting, httpsOptions);
+    httpsServer.start();
+}
+
+if (websiteSetting.http_port) {
+    const httpServer = new MyServer(fm, websiteSetting);
+    httpServer.start();
+}

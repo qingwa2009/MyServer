@@ -5,11 +5,13 @@ const TLS = require('tls');
 const Assert = require('assert');
 const { EventEmitter } = require('events');
 const IMyServerSetting = require('./IMyServerSetting');
+const MySocket = require('./MySocket');
 const { MyFileManager } = require('../MyUtil');
 
 module.exports = class IMyServer extends EventEmitter {
     websiteSetting = new IMyServerSetting();
-    fm = new MyFileManager();
+    /**@type {MyFileManager} */
+    fm = null;
     /**@type {Http.Server | Https.Server} */
     server = null;
     isHttps = false;
@@ -18,8 +20,13 @@ module.exports = class IMyServer extends EventEmitter {
 
     port = 0;
     ip = '0.0.0.0';
-    constructor(httpsOptions = undefined) {
+    /**
+     * @param {MyFileManager} fm 
+     * @param {{key:Buffer, cert:Buffer}} httpsOptions 
+     */
+    constructor(fm, httpsOptions = undefined) {
         super();
+        this.fm = fm;
         if (httpsOptions) {
             this.server = Https.createServer(httpsOptions);
             this.isHttps = true;
@@ -72,15 +79,15 @@ module.exports = class IMyServer extends EventEmitter {
      * @param {Net.Socket} sock 
      */
     _OnConnection(sock) {
-        // MySocket.decorate(sock, this);
-        Assert(false, '必须重载该函数');
+        MySocket.decorate(sock, this);
+        // Assert(false, '必须重载该函数');
     }
     /**
      * @param {TLS.TLSSocket} sock 
      */
     _OnSecureConnection(sock) {
-        // MySocket.decorate(sock, this);
-        Assert(false, '必须重载该函数');
+        MySocket.decorate(sock, this);
+        // Assert(false, '必须重载该函数');
     }
     /**
      * @param {Error} err 

@@ -16,8 +16,18 @@ class WSExportxb extends IMyWebSocketHandler {
         ws.maxFrameLength = 125;
         if (this.watcher === null) {
             const path = Path.join(ws._myServer.websiteSetting.root, watchFolder);
-            this.watcher = FS.watch(path);
-            this.watcher.on('change', () => this.notifyFolderChange());
+
+            try {
+                FS.mkdirSync(path);
+            } catch (error) {
+                console.log(error);
+            }
+            try {
+                this.watcher = FS.watch(path);
+                this.watcher.on('change', () => this.notifyFolderChange());
+            } catch (error) {
+                ERROR(`server error on wathing ${path}: ${error.toStrinig()}`);
+            }
         }
     }
 

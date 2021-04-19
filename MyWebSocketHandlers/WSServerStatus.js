@@ -6,29 +6,35 @@ const { LOG, WARN, ERROR } = MyUtil;
 
 
 class WSServerStatus extends IMyWebSocketHandler {
-    /**@type {IMyServer} */
-    server = null;
+    /**@type {IMyServer[]} */
+    servers = [];
 
     /**
      * 在添加WebSocket时对其进行设定
      * @param {MyWebSocket} ws 
      */
     _setupWebSocket(ws) {
-        if (!this.server) {
-            this.server = ws._myServer
-            this.server.onStatusChange(this._onServerStatusChange.bind(this));
+        if (!this.servers.includes(ws._myServer)) {
+            this.servers.push(ws._myServer);
+            ws._myServer.onStatusChange(this._onServerStatusChange.bind(this, ws._myServer));
         }
         ws.maxFrameLength = 255;
     }
 
-    _onServerStatusChange() {
-        this.server.status().then(
-            status => {
-                for (const ws of this._websockets.values()) {
-                    ws.send(status);
+    _onServerStatusChange(server) {
+        //server.status().then大部分数据都是共享的所以全部更新吧
+        for (let i = 0; i < this.servers.length; i++) {
+            const server = this.servers[i];
+            server.status().then(
+                status => {
+                    for (const ws of this._websockets.values()) {
+                        if (ws._myServer === server) {
+                            ws.send(status);
+                        }
+                    }
                 }
-            }
-        ).catch(err => { });
+            ).catch(err => { });
+        }
     }
 
     /**
@@ -57,7 +63,7 @@ class WSServerStatus extends IMyWebSocketHandler {
         } catch (error) {
             // ws.close(MyWebSocket.WS_CLOSE_INVALID_FRAME_PAYLOAD_DATA, "msg must be json!");
         }
-        this._onServerStatusChange();
+        this._onServerStatusChange(ws._myServer);
     }
 
 
