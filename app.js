@@ -20,7 +20,7 @@ try {
 /**@type {IMyServerSetting} */
 let websiteSetting = null;
 let need2save = false;
-const settingPath = Path.join(__dirname, FS.readFileSync('./websiteSetting.json'));
+const settingPath = Path.join(__dirname, FS.readFileSync('/websiteSetting.json'));
 try {
     websiteSetting = JSON.parse(settingPath);
 
