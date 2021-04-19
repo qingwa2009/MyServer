@@ -5,6 +5,7 @@ const Net = require('net');
 const Http = require('http');
 const Assert = require('assert');
 
+
 const MyUtil = require('./MyUtil');
 const MyFileManager = MyUtil.MyFileManager;
 
@@ -34,6 +35,14 @@ module.exports = class MyServer extends IMyServer {
     start() {
         this.port = this.isHttps ? this.websiteSetting.https_port : this.websiteSetting.http_port;
         this.ip = this.websiteSetting.ip;
+        if (!this.ip) {
+            const ips = MyUtil.getLocalIP4();
+            if (ips.length > 0) {
+                this.ip = ips[0];
+            } else {
+                this.ip = "127.0.0.1";
+            }
+        }
         this.server.listen(this.port, this.ip);
     }
 

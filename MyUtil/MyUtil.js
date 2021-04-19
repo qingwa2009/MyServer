@@ -1,5 +1,6 @@
 'use strict';
 const FS = require('fs');
+const os = require('os');
 const IMyWebLogger = require('./IMyWebLogger');
 
 let ENABLE_LOG = false;
@@ -113,4 +114,22 @@ function MyPromise(fn, ...args) {
             params[0] instanceof Error ? rej(params[0]) : res(params[1]);
         });
     });
+}
+
+exports.getLocalIP4 = getLocalIP4;
+
+function getLocalIP4() {
+    const ips = [];
+    var dic = os.networkInterfaces();
+    var vs = Object.values(dic);
+    for (let i = 0; i < vs.length; i++) {
+        const v = vs[i];
+        for (let j = 0; j < v.length; j++) {
+            const vv = v[j];
+            if (vv.family === 'IPv4') {
+                ips.push(vv.address);
+            }
+        }
+    }
+    return ips;
 }

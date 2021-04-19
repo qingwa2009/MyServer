@@ -10,7 +10,7 @@ module.exports = class IMyServerSetting {
     http_port = 80;
     https_port = 443;
     /**网站ip */
-    ip = "localhost";
+    ip = "";
     /**是否启用websocket接受调试信息 */
     enable_web_log = true;
     /**是否打印info信息 */

@@ -782,6 +782,13 @@ function testHttps() {
 
 }
 
+testOS()
+function testOS() {
+    const os = require('os');
+    console.log(`hostname: ${os.hostname()}`);
+    console.log(os.networkInterfaces());
+    console.log(MyUtil.getLocalIP4());
+}
 
 // lala();
 async function lala() {
