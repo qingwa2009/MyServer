@@ -20,8 +20,9 @@ try {
 /**@type {IMyServerSetting} */
 let websiteSetting = null;
 let need2save = false;
+const settingPath = Path.join(__dirname, FS.readFileSync('./websiteSetting.json'));
 try {
-    websiteSetting = JSON.parse(FS.readFileSync('./websiteSetting.json'));
+    websiteSetting = JSON.parse(settingPath);
 
     const tempSetting = new IMyServerSetting();
     const ns = Object.getOwnPropertyNames(tempSetting);
@@ -38,7 +39,7 @@ try {
 }
 
 if (need2save) {
-    FS.writeFileSync('./websiteSetting.json', JSON.stringify(websiteSetting));
+    FS.writeFileSync(settingPath, JSON.stringify(websiteSetting));
     console.log('websiteSetting saved!');
 }
 
