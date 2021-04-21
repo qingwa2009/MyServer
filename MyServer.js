@@ -178,7 +178,7 @@ module.exports = class MyServer extends IMyServer {
                 //客户端不缓存文件
                 resp.setHeader(HttpConst.HEADER["Cache-Control"], HttpConst.HEADER["no-cache"]);
                 resp.setHeader(HttpConst.HEADER["Last-Modified"], `${lmt.getFullYear()}/${lmt.getMonth() + 1}/${lmt.getDate()} ${lmt.getHours()}:${lmt.getMinutes()}:${lmt.getSeconds()}`);
-                resp.respFile(req, fPath, stat, this);
+                resp.respFile_(req, fPath, stat, this);
                 res();
             })
         });

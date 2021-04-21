@@ -80,13 +80,38 @@ class MyHttpResponse extends Http.ServerResponse {
     /**
      * @param {MyHttpRequest} req 
      * @param {string} path
+     * @param {IMyServer} server
+     * @param {boolean} sendContentType 设置响应头content-type 默认true
+     * @param {string} customContentType 自定义content-type
+     */
+    respFile(req, path, server, sendContentType = true, customContentType = undefined) {
+        FS.stat(path, (err, stat) => {
+            if (err) {
+                if (err.code === 'ENOENT')
+                    this.respError(req, 404, err.message);
+                else
+                    this.respError(req, 500, err.message);
+                return;
+            }
+            if (!stat.isFile()) {
+                this.respError(req, 400, `the request file is not a file!`);
+                return;
+            }
+            this.respFile_(req, path, stat, server, sendContentType, customContentType);
+        });
+    }
+
+    /**
+     * @param {MyHttpRequest} req 
+     * @param {string} path
      * @param {FS.Stats} stat path对应的fs.stats，必须确保stat.isFile()为true才行
      * @param {IMyServer} server
      * @param {boolean} sendContentType 设置响应头content-type 默认true
+     * @param {string} customContentType 自定义content-type
      */
-    async respFile(req, path, stat, server, sendContentType = true) {
+    async respFile_(req, path, stat, server, sendContentType = true, customContentType = undefined) {
         Assert(stat.isFile(), 'resp file is not a file: ' + path);
-        const t = sendContentType ? HttpConst.DOC_CONT_TYPE[Path.extname(path).toLocaleLowerCase()] || '*/*' : '*/*';
+        const t = customContentType || (sendContentType ? HttpConst.DOC_CONT_TYPE[Path.extname(path).toLocaleLowerCase()] || '*/*' : '*/*');
 
         let fh = null;
         try {

@@ -802,35 +802,20 @@ function testOS() {
     // ).listen(80, "192.168.6.25");
 
 }
-// testBat();
+
+testBat();
 async function testBat() {
     const child_process = require('child_process');
-    // const cb = (err, stdout, stderr) => {
-    //     if (err) {
-    //         console.error(err);
-    //         // console.log(`退出码：${err.code}`);
-    //     }
-    //     console.log(stdout);
-    //     console.error(stderr);
-    // }
-    // child_process.execSync("chcp 65001");
-    // child_process.exec("123", cb);
-
-    // child_process.execFile(Path.join(__dirname, "test/lala.bat"), { encoding: "utf8", }, cb);
-    //node ${__dirname}/app.js
-
-
-
-    const cp = child_process.spawn(`node ${__dirname}/serverRestarter.js`, [], { detached: true, stdio: 'inherit', shell: true });
+    const out = fs.openSync("./test/out.log", 'w');
+    const cp = child_process.fork(`serverRestarter.js`, [], { encoding: 'GBK', cwd: __dirname, detached: true, stdio: ['ignore', out, out, 'ipc'] });
+    // console.log(cp);
+    // const cp = child_process.spawn(`node ${__dirname}/serverRestarter.js`, [], { detached: true, stdio: 'inherit', shell: true });
     cp.unref();
-    cp.on("exit", (code, signal) => {
-        process.exit(0);
-    })
+    // cp.on("exit", (code, signal) => {
+    process.exit(0);
+    // })
 
-    // setTimeout(() => {
-    //     process.exit(0);
-    // }, 1000);
-    // child_process.exec("calc");
+
 }
 
 

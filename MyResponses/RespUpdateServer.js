@@ -1,5 +1,6 @@
 'use strict';
 const Path = require('path');
+const FS = require('fs');
 const child_process = require('child_process');
 const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHttp');
 
@@ -11,13 +12,17 @@ module.exports = class RespUpdateServer extends MyHttpResponse {
      * @param {IMyServer} server
      */
     response(req, server) {
+        const logPath = `${Path.dirname(__dirname)}/updateServer.log`;
         //-------------------
+        if (req.method !== HttpConst.METHOD.Post) {
+            this.respFile(req, logPath, server, true, HttpConst.CONTENT_TYPE.GBK);
+            return;
+        }
         //权限验证，没写  
-        //-------------------
-        const cp = child_process.spawn(`node ${Path.dirname(__dirname)}/serverRestarter.js`, [], { detached: true, stdio: 'inherit', shell: true });
+        //-------------------        
+        const out = FS.openSync(logPath, 'w');
+        const cp = child_process.fork(`${Path.dirname(__dirname)}/serverRestarter.js`, [], { cwd: __dirname, detached: true, stdio: ['ignore', out, out, 'ipc'] });
         cp.unref();
-        cp.on("exit", (code, signal) => {
-            process.exit(0);
-        })
+        process.exit(0);
     }
 }

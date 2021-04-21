@@ -20,7 +20,8 @@ class WSExportxb extends IMyWebSocketHandler {
             try {
                 FS.mkdirSync(path);
             } catch (error) {
-                console.log(error);
+                if (error.code !== "EEXIST")
+                    console.log(error);
             }
             try {
                 this.watcher = FS.watch(path);
