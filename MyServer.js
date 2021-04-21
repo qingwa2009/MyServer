@@ -7,6 +7,7 @@ const Assert = require('assert');
 
 
 const MyUtil = require('./MyUtil');
+const { LOG, WARN, ERROR } = MyUtil;
 const MyFileManager = MyUtil.MyFileManager;
 
 const { IMyServer, IMyServerSetting, HttpConst, MyHttpRequest, MyHttpResponse, MySocket, MyWebSocket, IMyWebSocketHandler } = require('./MyHttp');
@@ -33,6 +34,11 @@ module.exports = class MyServer extends IMyServer {
     }
 
     start() {
+        if (this.server.listening) {
+            WARN(this.toString(), "Can not start! server is already listening!");
+            return;
+        }
+
         this.port = this.isHttps ? this.websiteSetting.https_port : this.websiteSetting.http_port;
         this.ip = this.websiteSetting.ip;
         if (!this.ip) {
@@ -49,9 +55,16 @@ module.exports = class MyServer extends IMyServer {
     /**所有连接都关闭时才会触发close事件 */
     stop() {
         this.fm.releaseAllFileReading();
+
+        if (!this.server.listening) {
+            WARN(this.toString(), "Can not stop! server is not listening!");
+            return;
+        }
+
         return new Promise((res, rej) => {
             this.server.close(err => {
                 if (err) ERROR(this.toString(), err.stack);
+                this.isListening = false;
                 res();
             });
         });
@@ -68,6 +81,7 @@ module.exports = class MyServer extends IMyServer {
 
 
     _OnListening() {
+
         const addr = this.server.address();
         this.ip = addr.address;
         this.port = addr.port;

@@ -10,3 +10,4 @@ log/**
 **/test/**
 **/node_modules/**
 websiteSetting.json
+updateServer.bat

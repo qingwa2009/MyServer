@@ -20,6 +20,7 @@ class WSMultiplayer extends IMyWebSocketHandler {
      * @param {MyWebSocket} ws 
      */
     _setupWebSocket(ws) {
+        ws.setNoDelay(true);
         ws.maxFrameLength = 256;
         ws.id = this.id++;
 

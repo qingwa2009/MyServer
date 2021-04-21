@@ -1,10 +1,11 @@
 'use strict';
 const Path = require('path');
+const child_process = require('child_process');
 const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHttp');
 
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
-module.exports = class RespRestart extends MyHttpResponse {
+module.exports = class RespUpdateServer extends MyHttpResponse {
     /**
      * @param {MyHttpRequest} req 
      * @param {IMyServer} server
@@ -13,20 +14,10 @@ module.exports = class RespRestart extends MyHttpResponse {
         //-------------------
         //权限验证，没写  
         //-------------------
-
-        setTimeout(() => {
-            this.statusCode = 200;
-            this.end();
-        }, 3000);
-
-        if (server.server.listening) {
-            server.stop().then(() => {
-                setTimeout(() => {
-                    server.start();
-                }, 3000);
-            });
-        }
-
+        const cp = child_process.spawn(`node ${Path.dirname(__dirname)}/serverRestarter.js`, [], { detached: true, stdio: 'inherit', shell: true });
+        cp.unref();
+        cp.on("exit", (code, signal) => {
+            process.exit(0);
+        })
     }
-
 }

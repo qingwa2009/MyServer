@@ -18,6 +18,7 @@ module.exports = class IMyServer extends EventEmitter {
     socketCount = 0;
     _isStatusChange = false;
 
+
     port = 0;
     ip = '0.0.0.0';
     /**
@@ -122,3 +123,4 @@ module.exports = class IMyServer extends EventEmitter {
         return `Server ${this.ip}:${this.port}`;
     }
 }
+

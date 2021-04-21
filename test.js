@@ -782,13 +782,57 @@ function testHttps() {
 
 }
 
-testOS()
+// testOS()
 function testOS() {
     const os = require('os');
     console.log(`hostname: ${os.hostname()}`);
     console.log(os.networkInterfaces());
     console.log(MyUtil.getLocalIP4());
+    // const s0 = Http.createServer(
+    //     (req, resp) => {
+    //         resp.statusCode = 200;
+    //         resp.end("127.0.0.1");
+    //     }
+    // ).listen(80, "localhost");
+    // const s1 = Http.createServer(
+    //     (req, resp) => {
+    //         resp.statusCode = 200;
+    //         resp.end("192.168.6.25");
+    //     }
+    // ).listen(80, "192.168.6.25");
+
 }
+// testBat();
+async function testBat() {
+    const child_process = require('child_process');
+    // const cb = (err, stdout, stderr) => {
+    //     if (err) {
+    //         console.error(err);
+    //         // console.log(`退出码：${err.code}`);
+    //     }
+    //     console.log(stdout);
+    //     console.error(stderr);
+    // }
+    // child_process.execSync("chcp 65001");
+    // child_process.exec("123", cb);
+
+    // child_process.execFile(Path.join(__dirname, "test/lala.bat"), { encoding: "utf8", }, cb);
+    //node ${__dirname}/app.js
+
+
+
+    const cp = child_process.spawn(`node ${__dirname}/serverRestarter.js`, [], { detached: true, stdio: 'inherit', shell: true });
+    cp.unref();
+    cp.on("exit", (code, signal) => {
+        process.exit(0);
+    })
+
+    // setTimeout(() => {
+    //     process.exit(0);
+    // }, 1000);
+    // child_process.exec("calc");
+}
+
 
 // lala();
 async function lala() {
