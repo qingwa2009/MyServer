@@ -30,7 +30,7 @@ exports.HEADER = {
 
 exports.CONTENT_TYPE = {
     "UTF8": "text/plain;charset=utf-8",
-
+    "GBK": "text/plain;charset=GBK",
 }
 
 exports.METHOD = {

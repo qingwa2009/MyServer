@@ -15,8 +15,9 @@ module.exports = class RespUpdateWebsite extends MyHttpResponse {
         //权限验证，没写  
         //-------------------
 
-        child_process.execSync("chcp 65001");//命令行utf8编码
-        child_process.execFile(Path.join(Path.dirname(server.websiteSetting.root), "updateWebsite.bat"), (err, stdout, stderr) => {
+        // child_process.execSync("chcp 65001");//命令行utf8编码 但是cd不进中文目录orz
+        child_process.execFile(Path.join(Path.dirname(server.websiteSetting.root), "updateWebsite.bat"), [], { encoding: Buffer }, (err, stdout, stderr) => {
+            this.setHeader(HttpConst.HEADER["Content-Type"], HttpConst.CONTENT_TYPE.GBK);
             if (err) {
                 this.statusCode = 500;
                 this.end(stderr || err.message);
