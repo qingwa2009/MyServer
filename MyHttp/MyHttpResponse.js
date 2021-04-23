@@ -123,14 +123,15 @@ class MyHttpResponse extends Http.ServerResponse {
 
         this.setHeader(HttpConst.HEADER["Content-Type"], t);
         this.setHeader(HttpConst.HEADER["Content-Length"], stat.size);
-
+        WARN(this.toString(), `piping file ${path}, total length: ${stat.size}bytes`);
         fh.pipe(this).then(
             () => {
                 this.end();
                 // req.socket.destroy();
+                WARN(this.toString(), `success pipe file ${path}!`);
             },
             error => {
-                WARN(this.toString(), `pipe file ${path} failed: `, error.message);
+                WARN(this.toString(), `failed pipe file ${path} : `, error.message);
                 this.destroy(error);
                 req.destroy(error);
             }

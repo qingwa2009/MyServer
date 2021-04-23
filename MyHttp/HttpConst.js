@@ -31,6 +31,7 @@ exports.HEADER = {
 exports.CONTENT_TYPE = {
     "UTF8": "text/plain;charset=utf-8",
     "GBK": "text/plain;charset=GBK",
+
 }
 
 exports.METHOD = {
@@ -43,4 +44,5 @@ exports.DOC_CONT_TYPE = {
     '.js': 'text/javascript',
     '.css': 'text/css',
     '.png': 'image/png',
+    ".webmanifest": "application/manifest+json",
 };

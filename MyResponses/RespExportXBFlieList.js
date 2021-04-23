@@ -8,7 +8,6 @@ const { LOG, WARN, ERROR } = require('../MyUtil');
 const UPLOAD_ROOT = "/upload/";
 
 module.exports = class RespExportXBFlieList extends MyHttpResponse {
-
     /**
      * @param {MyHttpRequest} req 
      * @param {IMyServer} server

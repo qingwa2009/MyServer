@@ -5,6 +5,7 @@ const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHt
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 module.exports = class RespUpload extends MyHttpResponse {
+
     /**
      * @param {MyHttpRequest} req 
      * @param {IMyServer} server
