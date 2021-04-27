@@ -102,6 +102,20 @@ module.exports = class IMyServer extends EventEmitter {
         Assert(false, '必须重载该函数');
     }
 
+    /**跨域资源共享预请求\
+     * 注：普通的跨域请求满足以下所有条件的不会触发浏览器发送预请求
+     * 1. method = GET | HEAD | POST
+     * 2. header里的Accept, Accept-Language, Content-Language, Content-Type是浏览器自动设置的
+     * 3. Content-Type是application/x-www-form-urlencoded | multipart/form-data | text/plain
+     * 4. 如果是xhr请求，但是没有监听upload事件
+     * 5. 没有使用ReadableStream
+     * @param {MyHttpRequest} req 
+     * @param {MyHttpResponse} resp 
+     */
+    _OnCORSPreflightRequest(req, resp) {
+        Assert(false, '必须重载该函数');
+    }
+
     /**
      * @param {Http.IncomingMessage} req 
      * @param {Net.Socket} sock 

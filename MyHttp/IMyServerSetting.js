@@ -11,6 +11,8 @@ module.exports = class IMyServerSetting {
     https_port = 443;
     /**网站ip */
     ip = "";
+    /**是否允许跨域资源共享 */
+    allowCORS = true;
     /**是否启用websocket接受调试信息 */
     enable_web_log = true;
     /**是否打印info信息 */

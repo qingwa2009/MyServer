@@ -130,6 +130,11 @@ module.exports = class MyServer extends IMyServer {
         MyHttpRequest.decorate(req);
         MyHttpResponse.decorate(resp);
 
+        if (this.websiteSetting.allowCORS) {
+            //允许普通的跨域资源共享请求
+            resp.setHeader(HttpConst.HEADER["Access-Control-Allow-Origin"], "*");
+        }
+
         const { method, url } = req;
 
         if (method === HttpConst.METHOD.Get) {
@@ -143,8 +148,45 @@ module.exports = class MyServer extends IMyServer {
                     break;
             }
             return;
+        } else if (method === HttpConst.METHOD.Options) {
+            if (this.websiteSetting.allowCORS) {
+                this._OnCORSPreflightRequest(req, resp);
+            } else {
+                resp.respError(req, 500, "server not allow CORS!");
+            }
+            return;
         }
         this.RespOther(req, resp);
+    }
+
+    /**跨域资源共享预请求\
+     * 注：普通的跨域请求满足以下所有条件的不会触发浏览器发送预请求
+     * 1. method = GET | HEAD | POST
+     * 2. header里的Accept, Accept-Language, Content-Language, Content-Type是浏览器自动设置的
+     * 3. Content-Type是application/x-www-form-urlencoded | multipart/form-data | text/plain
+     * 4. 如果是xhr请求，但是没有监听upload事件
+     * 5. 没有使用ReadableStream
+     * @param {MyHttpRequest} req 
+     * @param {MyHttpResponse} resp 
+     */
+    _OnCORSPreflightRequest(req, resp) {
+        const corsMethod = req.headers[HttpConst.HEADER["Access-Control-Request-Method"]];
+        if (corsMethod) {
+            //**检查跨域资源预请求时，请求的方法 */
+            WARN(req.toString(), `CORS method: ${corsMethod}`);
+        }
+        const corsHeaders = req.headers[HttpConst.HEADER['Access-Control-Request-Headers']];
+        if (corsHeaders) {
+            //**检查跨域资源预请求时，请求头包含的headers */
+            WARN(req.toString(), `CORS headers: ${corsHeaders}`);
+        }
+
+        resp.setHeader(HttpConst.HEADER['Access-Control-Allow-Methods'], corsMethod);
+        resp.setHeader(HttpConst.HEADER['Access-Control-Allow-Headers'], corsHeaders);
+        resp.setHeader(HttpConst.HEADER["Access-Control-Allow-Origin"], req.headers[HttpConst.HEADER.Origin]);
+        resp.setHeader(HttpConst.HEADER["Access-Control-Max-Age"], 24 * 3600);
+        resp.setHeader(HttpConst.HEADER["Access-Control-Allow-Credentials"], true);//客户端跨域请求是否允许带上cookie之类的
+        resp.respString(req, 200);
     }
 
 

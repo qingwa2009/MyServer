@@ -26,6 +26,20 @@ exports.HEADER = {
     "Sec-WebSocket-Protocol": "sec-websocket-protocol",
     "Sec-WebSocket-Version": "sec-webSocket-version",
     "Server-Time": "server-time",
+    /**跨域资源预请求时，请求头包含的headers */
+    "Access-Control-Request-Headers": "access-control-request-headers",
+    /**跨域资源预请求时，请求的方法 */
+    "Access-Control-Request-Method": "access-control-request-method",
+    /**跨域资源预请求时，可以接受来自哪个域的请求 */
+    "Access-Control-Allow-Origin": "Access-Control-Allow-Origin",
+    /**跨域资源预请求时，可以接受的请求方法*/
+    "Access-Control-Allow-Methods": "Access-Control-Allow-Methods",
+    /**跨域资源预请求时，可以接受来包含的headers */
+    "Access-Control-Allow-Headers": "Access-Control-Allow-Headers",
+    /**跨域资源预请求时，是否允许带上本域的cookie之类的 */
+    "Access-Control-Allow-Credentials": "access-control-allow-credentials",
+    /**跨域资源预请求时，有效期 */
+    "Access-Control-Max-Age": "access-control-max-age",
 };
 
 exports.CONTENT_TYPE = {
@@ -37,6 +51,7 @@ exports.CONTENT_TYPE = {
 exports.METHOD = {
     "Get": "GET",
     "Post": "POST",
+    "Options": "OPTIONS",
 }
 
 exports.DOC_CONT_TYPE = {
