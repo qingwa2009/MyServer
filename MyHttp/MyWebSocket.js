@@ -489,34 +489,36 @@ class MyWebSocket extends MySocket {
 }
 module.exports = MyWebSocket;
 
+/**
+ * @param {MyHttpRequest} req 
+ * @param {MySocket} sock 
+ * @param {Buffer} head 
+ * @param {IMyWebSocketHandler} wshandler 用于权限检查
+ * @returns {Promise<boolean>} 握手成功返回true并添加进wshandler，否则返回false
+ */
 MyWebSocket.handshake =
-    /**
-    * @param {MyHttpRequest} req 
-    * @param {MySocket} sock 
-    * @param {Buffer} head 
-    * @param {IMyWebSocketHandler} wshandler 用于权限检查
-    * @returns {void | MyWebSocket}
-    */
-    function (req, sock, head, wshandler) {
+    async function (req, sock, head, wshandler) {
         const key = req.headers[HttpConst.HEADER["Sec-WebSocket-Key"]];
         let protocol = req.headers[HttpConst.HEADER["Sec-WebSocket-Protocol"]];
 
         if (!key) {
             WARN(sock.toString(), "has no Sec-WebSocket-Key!");
             sock.end();
-            return;
+            return false;
         }
 
         if (!protocol) {
             WARN(sock.toString(), "has no protocol!");
             sock.end();
-            return;
+            return false;
         }
 
-        if (!wshandler._privilegeCheck(sock, req)) {
-            WARN(sock.toString(), "privilegeCheck failed!");
+        try {
+            await wshandler._privilegeCheck(sock, req);
+        } catch (error) {
+            WARN(sock.toString(), `privilegeCheck failed: ${error.message}`);
             sock.end();
-            return;
+            return false;
         }
 
         //取第一个协议
@@ -531,7 +533,8 @@ MyWebSocket.handshake =
         sock.write("\r\n");
 
         MyWebSocket.decorate(sock, protocol, head);
-        return sock;
+        wshandler.add(sock);
+        return true;
     }
 
 MyWebSocket.calcAcceptKey =

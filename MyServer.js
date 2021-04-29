@@ -257,12 +257,11 @@ module.exports = class MyServer extends IMyServer {
             return;
         }
 
-        MyUtil.LOG(sock.toString(), "upgrading to websocket...");
-        const ws = MyWebSocket.handshake(req, sock, head, wshandler);
-        if (ws) {
-            wshandler.add(ws);
-            this.notifyStatusChange();
-        }
+        MyUtil.WARN(sock.toString(), "upgrading to websocket...");
+
+        MyWebSocket.handshake(req, sock, head, wshandler).then(success => {
+            if (success) this.notifyStatusChange()
+        });
     }
 }
 

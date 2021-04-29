@@ -43,13 +43,13 @@ class WSLogger extends IMyWebSocketHandler {
     }
 
     /**
-     * 权限检查，通过返回true，否则返回false
+     * 权限检查，检查失败抛出异常
      * @param {MySocket} sock
      * @param {MyHttpRequest} req
-     * @returns {boolean} 
+     * @throws {Exception} 
      * */
-    _privilegeCheck(sock, req) {
-        return true;
+    async _privilegeCheck(sock, req) {
+
     }
 
 }
