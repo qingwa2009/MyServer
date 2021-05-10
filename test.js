@@ -1,5 +1,7 @@
 'use strict';
 const sqlite3 = require('sqlite3');
+console.log(sqlite3);
+
 const fs = require("fs");
 const Path = require("path");
 const Http = require('http');

@@ -22,6 +22,7 @@ module.exports = class RespExportXBUpload extends MyHttpResponse {
             return;
         }
         fileName = decodeURI(fileName);
+        fileName = fileName.replace(/\s/ig, " ");//所有空白字符替换成空格
         const path = Path.join(server.websiteSetting.root, UPLOAD_ROOT, fileName);
         this.handleUpload(req, server, path);
     }
