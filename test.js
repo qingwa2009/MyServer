@@ -1,7 +1,4 @@
 'use strict';
-const sqlite3 = require('sqlite3');
-console.log(sqlite3);
-
 const fs = require("fs");
 const Path = require("path");
 const Http = require('http');
@@ -10,7 +7,7 @@ const Url = require("url");
 const { promisify } = require("util");
 const { MyHttpRequest, MySocket } = require('./MyHttp');
 const MyUtil = require("./MyUtil");
-const { MyFileManager } = require("./MyUtil");
+const { MyFileManager } = MyUtil;
 
 const querystring = require('querystring');
 
@@ -20,7 +17,7 @@ MyUtil.LOG("-----------------test-----------------");
 function testPath() {
     let p = Path.win32.join("c:/", "/abc/");
     console.log(p);
-    p = Path.win32.join("c:/", "/abc");
+    p = Path.win32.join("c:/def", "../abc");
     console.log(p);
 }
 
@@ -740,6 +737,18 @@ function testIterator2() {
     }
 }
 
+// testBufferAsKey()
+function testBufferAsKey() {
+    const buf = new Uint8Array([223, 224, 225]);
+    const buf2 = new Uint8Array([223, 224, 225]);
+    console.log(buf, buf2);
+    console.log(buf == buf2);
+    const dic = {}
+    dic[buf] = 1;
+    console.log(dic[buf2]);
+    console.log(dic);
+}
+
 // testHttps();
 function testHttps() {
     var https = require('https');
@@ -750,25 +759,39 @@ function testHttps() {
     const TLS = require('tls');
     Object.setPrototypeOf(TLS.TLSSocket.prototype, MySocket.prototype);
 
+    const sessions = {};
+
     server.listen(443);
-    // server.on("OCSPRequest", (cert, issuer, cb) => {
-    //     console.log("-------------OCSPRequest");
-    //     console.log(cert, issuer, cb);
-    // })
-    // server.on("newSession", (sessionId, sessionData, cb) => {
-    //     console.log("-------------newSession");
-    //     console.log(sessionId, sessionData, cb);
-    // })
-    // server.on("resumeSession", (sessionId, cb) => {
-    //     console.log("-------------resumeSession");
-    //     console.log(sessionId, cb);
-    // })
+    server.on("newSession", (sessionId, sessionData, cb) => {
+        console.log("-------------newSession");
+        console.log(sessionId, sessionData, cb);
+
+        sessions[sessionId.toString("hex")] = sessionData;
+        cb();
+    })
+    server.on("OCSPRequest", (cert, issuer, cb) => {
+        console.log("-------------OCSPRequest");
+        console.log(cert, issuer, cb);
+        cb(null, null);
+    })
+    server.on("resumeSession", (sessionId, cb) => {
+        console.log("-------------resumeSession");
+        console.log(sessionId, cb);
+        const session = sessions[sessionId.toString("hex")];
+        if (session) {
+            cb(null, session);
+        } else {
+            cb();
+        }
+    })
     server.on("secureConnection", (tlsSocket) => {
         console.log("-------------secureConnection");
+        console.log(tlsSocket.authorized, tlsSocket.authorizationError, tlsSocket.servername);
         console.log(tlsSocket);
         console.log(tlsSocket instanceof TLS.TLSSocket);
         console.log(tlsSocket instanceof MySocket);
         console.log(tlsSocket instanceof Net.Socket);
+
     })
     // server.on("tlsClientError", (err, tlsSocket) => {
     //     console.log("-------------tlsClientError");
@@ -777,9 +800,10 @@ function testHttps() {
 
 
     server.on("request", (req, resp) => {
-
+        console.log(sessions);
         console.log("-------------request");
         console.log(req, resp);
+        resp.end("abc");
     });
 
 
@@ -806,7 +830,7 @@ function testOS() {
 
 }
 
-testBat();
+// testBat();
 async function testBat() {
     const child_process = require('child_process');
     const out = fs.openSync("./test/out.log", 'w');
@@ -821,23 +845,9 @@ async function testBat() {
 
 }
 
-
-// lala();
-async function lala() {
-    // const MyUtil = require('./MyUtil');
-    // console.log(MyUtil.ENABLE_LOG);
-    // MyUtil.LOG("lala");
-    // MyUtil.ENABLE_LOG = true;
-    // console.log(MyUtil.ENABLE_LOG);
-    // MyUtil.LOG("lala");
-
-    // const resp = require('./MyResponses');
-    // console.log(resp.get('/Upload'));
-
+// testBuffer2();
+async function testBuffer2() {
     const buf = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 255]);
-
-
-
     const buf2 = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength);
     const buf4 = Buffer.from(buf.buffer, buf.byteOffset - 6, buf.byteLength + 6 + 16);
     const buf3 = Buffer.from(buf, 5, 5);
@@ -861,4 +871,296 @@ async function lala() {
     console.log(props);
     console.log(typeof WEBSOCKET_HANDLER_LIST.get(props[0]));
     console.log(JSON.stringify(WEBSOCKET_HANDLER_LIST.status()));
+}
+
+
+
+// testBetterSqlite3();
+async function testBetterSqlite3() {
+    const Database = require('better-sqlite3');
+    var db = new Database(":memory:", { verbose: console.log });
+    db.pragma("foreign_keys=true");
+    db.pragma("journal_mode=wal");
+    db.exec("create table if not exists tb (a, b, c)");
+
+    //prepare statement
+    const insertIntoTb = db.prepare("insert into tb values (@a, @b, @c)");
+    //transaction
+    const transaction = db.transaction((values) => {
+        for (const v of values) insertIntoTb.run(v);
+    })
+    const values = [
+        { a: 1, b: 1, c: 1 },
+        { a: 2, b: 2, c: 2 },
+        { a: 3, b: 3, c: 3 },
+    ]
+    //begin immediate
+    transaction.immediate(values);
+    //嵌套transaction成为savepoint
+    const t2 = db.transaction((values) => {
+        insertIntoTb.run({ a: "-", b: "-", c: "-" });
+        //savepoint xx
+        transaction(values);
+        //release xx
+    })
+    t2.immediate(values);
+
+    try {
+        transaction.immediate([
+            { a: 1, b: 2, c: 3 },
+            { a: 1, b: 2 },//错误时自动回滚
+            { a: 1, b: 2, c: 3 },
+        ]);
+    } catch (error) {
+        console.log(error.message);
+    }
+
+    //备份
+    let pause = false;
+    db.backup("./test/backup.db", {
+        progress({ totalPages: t, remainingPages: r }) {
+            console.log(`backup progress:${((t - r) / t * 100).toFixed(1)}%`);
+            return pause ? 0 : 200;
+        }
+    }).then(() => {
+        console.log("backup complete!");
+    }).catch(err => {
+        console.log("backup failed:", err.message);
+    });
+
+    //序列化到内存
+    // const buffer = db.serialize();
+    // db.close();
+    //再以memory的方式创建新的数据库
+    // db = new Database(buffer);
+
+    //user defined function;
+    //可以定义相同名字但参数个数不同的函数
+    db.function("add2", (a, b) => a + b);
+    //pluck开启仅返回第一行第一列的一个值
+    console.log(db.prepare("select add2(?,?)").pluck().get("1", 2));
+    try {
+        db.prepare("select add2(?,?,?)").pluck().get(1, 2, 3);
+    } catch (error) {
+        console.log(error.message);
+    }
+    db.function("void", {
+        deterministic: true,//确定性算法，不知啥意思，说某些条件下能提高性能
+        safeIntegers: true,//?
+        varargs: true//不定参数个数
+    }, () => { })
+    console.log(db.prepare("select void()").pluck().get());
+    console.log(db.prepare("select void(?,?)").pluck().get(1, 2));
+
+    //聚合函数
+    db.aggregate('addAll', {
+        start: 0,//起始值
+        step: (total, nextValue) => total + nextValue,
+    })
+    console.log(
+        db.prepare('select addAll(a) from tb').pluck().get()
+    );
+
+    //virtual table
+    db.table("filesystem_directory", {
+        columns: ["filename", "data"],
+        rows: function* () {
+            for (const filename of fs.readdirSync(process.cwd())) {
+                try {
+                    const data = fs.readFileSync(filename);
+                    yield { filename, data };
+                } catch (error) { }
+            }
+        }
+    });
+    console.log(db.prepare("select * from filesystem_directory").all());
+    db.table("regex", {
+        columns: ["match", "capture"],
+        rows: function* (pattern, text) {
+            const regex = new RegExp(pattern, "g");
+            let match;
+            while (match = regex.exec(text)) {
+                yield [match[0], match[1]];
+            }
+        }
+    });
+    let stmt = db.prepare("select * from regex('\\$(\\d+)', ?)");
+    console.log(stmt.all("Desks cost $500 and chairs cost $27"));
+    db.table("sequence", {
+        columns: ["value"],
+        parameters: ["length", "start"],
+        rows: function* (length, start = 0) {
+            if (length === undefined)
+                throw new TypeError("missing required parametter 'length'");
+            const end = start + length;
+            for (let n = start; n < end; ++n) {
+                yield { value: n };
+            }
+        }
+    });
+    console.log(db.prepare("select * from sequence(10)").pluck().all());
+
+    console.log(db.prepare("select * from tb").run());
+    console.log(db.prepare("select * from tb").get());
+    console.log(db.prepare("select * from tb").all());
+    const it = db.prepare("select * from tb").iterate();
+    for (const row of it) {
+        console.log(row);
+    }
+    console.log(db.prepare("select * from tb").expand().all());
+    console.log(db.prepare("select * from tb").raw().all());
+    console.log(db.prepare("select * from tb").columns());
+    stmt = db.prepare("select * from tb where a=@a and b=@b");
+    stmt.bind({ a: 1, b: 1 });//永久绑定
+    // stmt.bind({ a: 2, b: 2 });//报错
+    // console.log(stmt.all({ a: 2, b: 2 }));//报错
+    console.log(stmt.all());
+    console.log(stmt.reader);
+
+    stmt = db.prepare('INSERT INTO tb VALUES (@name, @name, ?)');
+    console.log(stmt.run(45, { name: 'Henry' }));
+
+
+    const MySqlite = require("./MySqlite/MySqlite");
+    // console.log(MySqlite.getMyTableData(db.prepare("select c, b, a from tb where a=?"), 1));
+    MySqlite.decorate(db);
+    let mtd = db.getMyTableData("select c, b, a from tb where a=?", 1);
+    console.log(mtd);
+
+}
+
+testDbSetting();
+function testDbSetting() {
+    MyUtil.setEnableLog(true);
+    const DbSetting = require('./sample/DbSetting');
+    const dbsetting = new DbSetting();
+    const values = [
+        { col: "a", width: 60 },
+        { col: "b", width: 70 },
+        { col: "c", width: 80 },
+        { col: "d", width: 90 },
+        { col: "e", width: 0 },
+        { col: "f", width: 100 },
+        { col: "g", width: 0 },
+    ];
+    try {
+        dbsetting.saveUserSetting('', '', values);
+    } catch (error) {
+        console.log(error.message);
+    }
+    dbsetting.saveUserSetting('guest', 'list0', values);
+    dbsetting.saveUserSetting('guest', 'list1', values);
+
+    dbsetting.deleteUserSetting('guest');
+    dbsetting.deleteUserSetting('guest', 'list1');
+
+    console.log(dbsetting.selectUserSettings('guest'));
+    console.log(dbsetting.selectUserSettings('guest', 'list0'));
+    console.log(dbsetting.selectUserSettings('guest', 'list1'));
+
+}
+
+// testResp();
+async function testResp() {
+    [
+        '/upload',
+        '/uploaddownload',
+        '/exportxbfilelist',
+        '/exportxbupload',
+        // '/restart',
+        // '/updatewebsite',
+        // '/updateserver',
+        '/usersetting'
+    ].forEach(url => {
+
+        const options = {
+            host: "localhost",
+            method: "get",
+            path: url,
+        };
+        let req = null;
+        /**get连接后立即关闭 */
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end(() => req.destroy());
+        req.once("error", err => console.log(err.message));
+
+        /**get不添加query*/
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end();
+        req.once("error", err => console.log(err.message));
+
+        /**get添加乱七八糟query*/
+        options.path = url + "?asdf=asdf&asdfa&qwoei";
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end();
+        req.once("error", err => console.log(err.message));
+
+        /**get不添加query*/
+        options.path = url;
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end("abc");
+        req.once("error", err => console.log(err.message));
+
+        /**get添加乱七八糟query*/
+        options.path = url + "?asdf=asdf&asdfa&qwoei";
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end("abc");
+        req.once("error", err => console.log(err.message));
+
+        options.method = "post";
+        /**post连接后立即关闭 */
+        options.path = url;
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end(() => req.destroy());
+        req.once("error", err => console.log(err.message));
+
+        /**post不添加query*/
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end();
+        req.once("error", err => console.log(err.message));
+
+        /**post添加乱七八糟query*/
+        options.path = url + "?asdf=asdf&asdfa&qwoei";
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end();
+        req.once("error", err => console.log(err.message));
+
+        /**post不添加query*/
+        options.path = url;
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end("abc");
+        req.once("error", err => console.log(err.message));
+
+        /**post添加乱七八糟query*/
+        options.path = url + "?asdf=asdf&asdfa&qwoei";
+        req = Http.request(options, resp => {
+            resp.once("error", err => console.log(err));
+        });
+        req.end("abc");
+        req.once("error", err => console.log(err.message));
+
+    })
+
+
+
+
+
 }

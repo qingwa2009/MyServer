@@ -9,6 +9,9 @@ log/**
 **/旧/**
 **/test/**
 **/node_modules/**
+*.db
+*.db-shm
+*.db-wal
 websiteSetting.json
 updateServer.bat
 updateServer.log

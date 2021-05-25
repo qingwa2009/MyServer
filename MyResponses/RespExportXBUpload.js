@@ -6,7 +6,7 @@ const { LOG, WARN, ERROR } = require('../MyUtil');
 
 const UPLOAD_ROOT = "/upload/";
 
-module.exports = class RespExportXBUpload extends MyHttpResponse {
+module.exports = class extends MyHttpResponse {
     /**
      * @param {MyHttpRequest} req 
      * @param {IMyServer} server
@@ -24,7 +24,7 @@ module.exports = class RespExportXBUpload extends MyHttpResponse {
         fileName = decodeURI(fileName);
         fileName = fileName.replace(/\s/ig, " ");//所有空白字符替换成空格
         const path = Path.join(server.websiteSetting.root, UPLOAD_ROOT, fileName);
-        this.handleUpload(req, server, path);
+        this.handleUpload(req, path);
     }
 
 }

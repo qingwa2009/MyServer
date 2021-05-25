@@ -8,4 +8,5 @@ module.exports = {
     IMyServerSetting: require('./IMyServerSetting'),
     IMyServer: require('./IMyServer'),
     IMyWebSocketHandler: require('./IMyWebSocketHandler'),
+    MySession: require('./MySession'),
 }

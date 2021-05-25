@@ -8,22 +8,22 @@ const Assert = require('assert');
 
 const MyUtil = require('./MyUtil');
 const { LOG, WARN, ERROR } = MyUtil;
-const MyFileManager = MyUtil.MyFileManager;
+const Application = require('./Application');
+const { MyFileManager } = MyUtil;
 
-const { IMyServer, IMyServerSetting, HttpConst, MyHttpRequest, MyHttpResponse, MySocket, MyWebSocket, IMyWebSocketHandler } = require('./MyHttp');
+const { MySession, IMyServer, IMyServerSetting, HttpConst, MyHttpRequest, MyHttpResponse, MySocket, MyWebSocket, IMyWebSocketHandler } = require('./MyHttp');
 const RESP_CLASS_LIST = require('./MyResponses');
 const WEBSOCKET_HANDLER_LIST = require('./MyWebSocketHandlers');
 
 module.exports = class MyServer extends IMyServer {
 
     /**
-     * @param {MyFileManager} fm 
      * @param {IMyServerSetting} websiteSetting 
      * @param {{key:string, cert:string}} httpsOptions 
      */
 
-    constructor(fm, websiteSetting, httpsOptions = undefined) {
-        super(fm, httpsOptions);
+    constructor(websiteSetting, httpsOptions = undefined) {
+        super(httpsOptions);
         this.websiteSetting = websiteSetting;
         MyUtil.setEnableLog(this.websiteSetting.debug_log);
         MyUtil.setEnableWarn(this.websiteSetting.debug_warn);
@@ -54,7 +54,7 @@ module.exports = class MyServer extends IMyServer {
 
     /**所有连接都关闭时才会触发close事件 */
     stop() {
-        this.fm.releaseAllFileReading();
+        Application.fm.releaseAllFileReading();
 
         if (!this.server.listening) {
             WARN(this.toString(), "Can not stop! server is not listening!");
@@ -73,7 +73,7 @@ module.exports = class MyServer extends IMyServer {
     async status() {
         const st = {};
         st['socketCount'] = this.socketCount;
-        st['fileManager'] = await this.fm.status();
+        st['fileManager'] = await Application.fm.status();
         st['webSocket'] = WEBSOCKET_HANDLER_LIST.status();
         st['debug'] = { log: MyUtil.getEnableLog(), warn: MyUtil.getEnableWarn(), error: MyUtil.getEnableError(), weblog: MyUtil.getEnableWeblog() };
         return JSON.stringify(st);
@@ -120,7 +120,15 @@ module.exports = class MyServer extends IMyServer {
         MyUtil.ERROR(err);
     }
 
-
+    /**
+     * 还没写
+     * @param {MyHttpRequest} req 
+     */
+    createSession(req) {
+        //just for sameple test
+        const session = MySession.Guest;
+        return session;
+    }
 
     /**
      * @param {MyHttpRequest} req 
@@ -129,6 +137,8 @@ module.exports = class MyServer extends IMyServer {
     _OnRequest(req, resp) {
         MyHttpRequest.decorate(req);
         MyHttpResponse.decorate(resp);
+
+        req.Session = this.createSession(req);
 
         if (this.websiteSetting.allowCORS) {
             //允许普通的跨域资源共享请求
@@ -220,7 +230,7 @@ module.exports = class MyServer extends IMyServer {
                 //客户端不缓存文件
                 resp.setHeader(HttpConst.HEADER["Cache-Control"], HttpConst.HEADER["no-cache"]);
                 resp.setHeader(HttpConst.HEADER["Last-Modified"], `${lmt.getFullYear()}/${lmt.getMonth() + 1}/${lmt.getDate()} ${lmt.getHours()}:${lmt.getMinutes()}:${lmt.getSeconds()}`);
-                resp.respFile_(req, fPath, stat, this);
+                resp.respFile_(req, fPath, stat);
                 res();
             })
         });

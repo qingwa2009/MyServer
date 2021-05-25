@@ -3,6 +3,7 @@ const Http = require('http');
 const Assert = require('assert');
 const QueryString = require('querystring');
 const MySocket = require('./MySocket');
+const MySession = require("./MySession");
 const MyUtil = require('../MyUtil');
 const { LOG, WARN, ERROR } = MyUtil;
 
@@ -45,6 +46,18 @@ class MyHttpRequest extends Http.IncomingMessage {
      */
     get querys() {
         return this._querys || (this._querys = QueryString.parse(this.query));
+    }
+
+
+    get Session() {
+        return this._session;
+    }
+
+    /**
+     * @param {MySession} session
+     */
+    set Session(session) {
+        this._session = session;
     }
 
     toString() {

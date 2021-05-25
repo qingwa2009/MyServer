@@ -8,7 +8,7 @@ module.exports = {
     '/restart': require('./RespRestart'),
     '/updatewebsite': require('./RespUpdateWebsite'),
     '/updateserver': require('./RespUpdateServer'),
-
+    '/usersetting': require('./RespUserSettings'),
     /**
     * @param {string} url 
     * @returns {MyHttpResponse} class

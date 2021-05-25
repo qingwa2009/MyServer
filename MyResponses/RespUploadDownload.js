@@ -1,13 +1,13 @@
 'use strict';
 const Path = require('path');
 const FS = require('fs');
-
+const Application = require("../Application");
 const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHttp');
 const { MyFileManager, formatDate } = require('../MyUtil');
 
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
-module.exports = class RespUploadDownload extends MyHttpResponse {
+module.exports = class extends MyHttpResponse {
     static CMD_DEL = 'del';
     static CMD_FILE = 'file';
     /**
@@ -25,24 +25,24 @@ module.exports = class RespUploadDownload extends MyHttpResponse {
             }
             fileName = decodeURI(fileName);
             const path = Path.join(server.websiteSetting.upload_folder, fileName);
-            this.handleUpload(req, server, path);
+            this.handleUpload(req, path);
             return;
         }
 
-        const del = req.querys[RespUploadDownload.CMD_DEL];
+        const del = req.querys[module.exports.CMD_DEL];
         if (del) {
-            if (!this.checkQueryIsStr(req, del, RespUploadDownload.CMD_DEL)) return;
+            if (!this.checkQueryIsStr(req, del, module.exports.CMD_DEL)) return;
             const path = Path.join(server.websiteSetting.upload_folder, decodeURI(del));
-            this.handleDeleteFile(req, server, path);
+            this.handleDeleteFile(req, path);
             return;
         }
 
-        const f = req.querys[RespUploadDownload.CMD_FILE] || '';
+        const f = req.querys[module.exports.CMD_FILE] || '';
         if (f === '') {
-            this.handleGetFileList(req, server, server.websiteSetting.upload_folder);
+            this.handleGetFileList(req, server.websiteSetting.upload_folder);
             return;
         } else {
-            if (!this.checkQueryIsStr(req, f, RespUploadDownload.CMD_FILE)) return;
+            if (!this.checkQueryIsStr(req, f, module.exports.CMD_FILE)) return;
 
             const path = Path.join(server.websiteSetting.upload_folder, decodeURI(f));
             this.handleGetFile(req, server, path);
@@ -53,12 +53,11 @@ module.exports = class RespUploadDownload extends MyHttpResponse {
     }
 
     /**
-     * @param {MyHttpRequest} req 
-     * @param {IMyServer} server 
+     * @param {MyHttpRequest} req      
      * @param {string} path 
      */
-    handleDeleteFile(req, server, path) {
-        server.fm.deleteFile(path).then(
+    handleDeleteFile(req, path) {
+        Application.fm.deleteFile(path).then(
             () => {
                 this.respString(req, 200);
             },
@@ -70,11 +69,10 @@ module.exports = class RespUploadDownload extends MyHttpResponse {
 
     /**
      * @param {MyHttpRequest} req 
-     * @param {IMyServer} server 
      * @param {string} folder 
      */
-    handleGetFileList(req, server, folder) {
-        server.fm.getFileList(folder).then(
+    handleGetFileList(req, folder) {
+        Application.fm.getFileList(folder).then(
             stats => {
                 var ss = [];
                 for (let i = 0; i < stats.length; i++) {

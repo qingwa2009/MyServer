@@ -4,6 +4,7 @@ const FS = require('fs');
 const Assert = require('assert');
 const Path = require('path');
 const HttpConst = require('./HttpConst');
+const Application = require("../Application");
 const MyHttpRequest = require('./MyHttpRequest');
 const IMyServer = require('./IMyServer');
 const { LOG, WARN, ERROR, MyFileManager } = require('../MyUtil');
@@ -97,7 +98,7 @@ class MyHttpResponse extends Http.ServerResponse {
                 this.respError(req, 400, `the request file is not a file!`);
                 return;
             }
-            this.respFile_(req, path, stat, server, sendContentType, customContentType);
+            this.respFile_(req, path, stat, sendContentType, customContentType);
         });
     }
 
@@ -105,17 +106,16 @@ class MyHttpResponse extends Http.ServerResponse {
      * @param {MyHttpRequest} req 
      * @param {string} path
      * @param {FS.Stats} stat path对应的fs.stats，必须确保stat.isFile()为true才行
-     * @param {IMyServer} server
      * @param {boolean} sendContentType 设置响应头content-type 默认true
      * @param {string} customContentType 自定义content-type
      */
-    async respFile_(req, path, stat, server, sendContentType = true, customContentType = undefined) {
+    async respFile_(req, path, stat, sendContentType = true, customContentType = undefined) {
         Assert(stat.isFile(), 'resp file is not a file: ' + path);
         const t = customContentType || (sendContentType ? HttpConst.DOC_CONT_TYPE[Path.extname(path).toLocaleLowerCase()] || '*/*' : '*/*');
 
         let fh = null;
         try {
-            fh = await server.fm.open(path);
+            fh = await Application.fm.open(path);
         } catch (error) {
             this.respError(req, 500, error.message);
             return;
@@ -141,7 +141,7 @@ class MyHttpResponse extends Http.ServerResponse {
     /**
      * 检查是否对应的请求方法，不匹配将自动回复405错误，并返回false
      * @param {MyHttpRequest} req
-     * @param {string} method
+     * @param {HttpConst.METHOD} method 
      */
     checkIsMethod(req, method) {
         if (req.method !== method) {
@@ -209,13 +209,12 @@ class MyHttpResponse extends Http.ServerResponse {
     /**
      * 自动处理上传文件的请求
      * @param {MyHttpRequest} req 
-     * @param {IMyServer} server 
      * @param {string} path 
      */
-    handleUpload(req, server, path) {
+    handleUpload(req, path) {
         /**@type {MyFileManager.MyFileWriteStream} */
         let _ws = null;
-        server.fm.create(path).then(
+        Application.fm.create(path).then(
             ws => {
                 if (req.aborted) {
                     ws.giveup();
@@ -260,6 +259,23 @@ class MyHttpResponse extends Http.ServerResponse {
         // req.once('close', () => {
         //     //底层链接已关闭，socket已经设为null了
         // });
+    }
+
+    /**
+     * 处理POST过来的JSON数据，如果解析失败自动响应400
+     * @param {MyHttpRequest} req 
+     * @param {(json:Object)=>{}} callback 
+     * 如果解析成功，调用callback()；失败则自动响应400
+     */
+    handleJSON(req, callback) {
+        req.onceReqBodyRecvComplete(buf => {
+            try {
+                const obj = JSON.parse(buf);
+                callback(obj);
+            } catch (error) {
+                this.respError(req, 400, error.toString());
+            }
+        });
     }
 
 

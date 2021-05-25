@@ -2,12 +2,12 @@
 const Path = require('path');
 const child_process = require('child_process');
 const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHttp');
-
+const Application = require("../Application");
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 var isUpdating = false;
 
-module.exports = class RespUpdateWebsite extends MyHttpResponse {
+module.exports = class extends MyHttpResponse {
 
     /**
      * @param {MyHttpRequest} req 
@@ -23,7 +23,7 @@ module.exports = class RespUpdateWebsite extends MyHttpResponse {
         }
 
         isUpdating = true;
-        server.fm.releaseAllFileReading();
+        Application.fm.releaseAllFileReading();
         setTimeout(() => {
             // child_process.execSync("chcp 65001");//命令行utf8编码 但是cd不进中文目录orz        
             child_process.execFile(Path.join(Path.dirname(server.websiteSetting.root), "updateWebsite.bat"), [], { encoding: Buffer }, (err, stdout, stderr) => {

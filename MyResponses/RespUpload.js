@@ -4,7 +4,7 @@ const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHt
 
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
-module.exports = class RespUpload extends MyHttpResponse {
+module.exports = class extends MyHttpResponse {
 
     /**
      * @param {MyHttpRequest} req 
@@ -22,7 +22,7 @@ module.exports = class RespUpload extends MyHttpResponse {
         }
         fileName = decodeURI(fileName);
         const path = Path.join(server.websiteSetting.upload_folder, fileName);
-        this.handleUpload(req, server, path);
+        this.handleUpload(req, path);
     }
 
 }

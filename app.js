@@ -1,9 +1,10 @@
 'use strict';
+const MyUtil = require('./MyUtil');
+const Application = require("./Application");
 
 const Assert = require('assert');
 const FS = require('fs');
 const Path = require('path');
-const MyUtil = require('./MyUtil');
 const MyServer = require('./MyServer');
 const { IMyServerSetting } = require('./MyHttp');
 
@@ -43,14 +44,12 @@ if (need2save) {
     console.log('websiteSetting saved!');
 }
 
-const fm = new MyUtil.MyFileManager();
-
 if (websiteSetting.https_port && httpsOptions) {
-    const httpsServer = new MyServer(fm, websiteSetting, httpsOptions);
+    const httpsServer = new MyServer(websiteSetting, httpsOptions);
     httpsServer.start();
 }
 
 if (websiteSetting.http_port) {
-    const httpServer = new MyServer(fm, websiteSetting);
+    const httpServer = new MyServer(websiteSetting);
     httpServer.start();
 }

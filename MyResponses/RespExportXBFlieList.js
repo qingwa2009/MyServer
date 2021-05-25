@@ -2,12 +2,12 @@
 const Path = require('path');
 const FS = require('fs');
 const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHttp');
-
+const Application = require("../Application");
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 const UPLOAD_ROOT = "/upload/";
 
-module.exports = class RespExportXBFlieList extends MyHttpResponse {
+module.exports = class extends MyHttpResponse {
     /**
      * @param {MyHttpRequest} req 
      * @param {IMyServer} server
@@ -42,7 +42,7 @@ module.exports = class RespExportXBFlieList extends MyHttpResponse {
                     req.onceReqBodyRecvComplete(datas => {
                         const s = datas.join('');
                         const path = Path.join(server.websiteSetting.root, UPLOAD_ROOT, s);
-                        server.fm.deleteFile(path).then(() => {
+                        Application.fm.deleteFile(path).then(() => {
                             this.respString(req, 200);
                         }).catch(err => {
                             this.respError(req, 400, err.toString());
