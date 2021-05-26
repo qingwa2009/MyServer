@@ -1,10 +1,8 @@
 'use strict';
 const Path = require('path');
-const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHttp');
-
-const { LOG, WARN, ERROR } = require('../MyUtil');
-
-const UPLOAD_ROOT = "/upload/";
+const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../../MyHttp');
+const Application = require("../../Application");
+const { LOG, WARN, ERROR } = require('../../MyUtil');
 
 module.exports = class extends MyHttpResponse {
     /**
@@ -23,7 +21,7 @@ module.exports = class extends MyHttpResponse {
         }
         fileName = decodeURI(fileName);
         fileName = fileName.replace(/\s/ig, " ");//所有空白字符替换成空格
-        const path = Path.join(server.websiteSetting.root, UPLOAD_ROOT, fileName);
+        const path = Path.join(server.websiteSetting.root, Application.xb_export_folder, fileName);
         this.handleUpload(req, path);
     }
 

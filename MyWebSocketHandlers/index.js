@@ -5,7 +5,7 @@ module.exports = {
     '/weblog': require('./WSLogger'),
     '/multiplayer': require('./WSMultiplayer'),
     '/status': require('./WSServerStatus'),
-    '/exportxb': require('./WSExportxb'),
+    '/exportxb': require('../MyResponses/exportxb/WSExportxb'),
 
 
 

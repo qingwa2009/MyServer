@@ -8,7 +8,7 @@ const { promisify } = require("util");
 const { MyHttpRequest, MySocket } = require('./MyHttp');
 const MyUtil = require("./MyUtil");
 const { MyFileManager } = MyUtil;
-
+const Database = require('better-sqlite3');
 const querystring = require('querystring');
 
 MyUtil.LOG("-----------------test-----------------");
@@ -877,7 +877,7 @@ async function testBuffer2() {
 
 // testBetterSqlite3();
 async function testBetterSqlite3() {
-    const Database = require('better-sqlite3');
+
     var db = new Database(":memory:", { verbose: console.log });
     db.pragma("foreign_keys=true");
     db.pragma("journal_mode=wal");
@@ -1029,7 +1029,7 @@ async function testBetterSqlite3() {
 
 }
 
-testDbSetting();
+// testDbSetting();
 function testDbSetting() {
     MyUtil.setEnableLog(true);
     const DbSetting = require('./sample/DbSetting');
@@ -1058,6 +1058,15 @@ function testDbSetting() {
     console.log(dbsetting.selectUserSettings('guest', 'list0'));
     console.log(dbsetting.selectUserSettings('guest', 'list1'));
 
+}
+
+// testBetterSqlite3Injection();
+function testBetterSqlite3Injection() {
+    const db = new Database(":memory:", { verbose: console.log });
+    db.prepare("create table tb (a, b, c)").run();
+    db.prepare("insert into tb values (1, 2, 3)");
+    let ret = db.prepare("select * from tb where a=? and b=?").all("1'--+", "")
+    console.log(ret);
 }
 
 // testResp();

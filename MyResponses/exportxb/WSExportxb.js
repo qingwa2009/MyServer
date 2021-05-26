@@ -1,10 +1,10 @@
 'use strict';
 const FS = require('fs');
 const Path = require('path');
-const { IMyWebSocketHandler, MyWebSocket, MyHttpRequest, MySocket } = require('../MyHttp');
-const { LOG, WARN, ERROR } = require('../MyUtil');
+const { IMyWebSocketHandler, MyWebSocket, MyHttpRequest, MySocket } = require('../../MyHttp');
+const Application = require("../../Application");
+const { LOG, WARN, ERROR } = require('../../MyUtil');
 
-const watchFolder = "/upload/";
 class WSExportxb extends IMyWebSocketHandler {
     /**@type {FS.FSWatcher} */
     watcher = null
@@ -15,7 +15,7 @@ class WSExportxb extends IMyWebSocketHandler {
     _setupWebSocket(ws) {
         ws.maxFrameLength = 125;
         if (this.watcher === null) {
-            const path = Path.join(ws._myServer.websiteSetting.root, watchFolder);
+            const path = Path.join(ws._myServer.websiteSetting.root, Application.xb_export_folder);
 
             try {
                 FS.mkdirSync(path);

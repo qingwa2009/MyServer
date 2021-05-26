@@ -1,11 +1,10 @@
 'use strict';
 const Path = require('path');
 const FS = require('fs');
-const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHttp');
-const Application = require("../Application");
-const { LOG, WARN, ERROR } = require('../MyUtil');
+const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../../MyHttp');
+const Application = require("../../Application");
+const { LOG, WARN, ERROR } = require('../../MyUtil');
 
-const UPLOAD_ROOT = "/upload/";
 
 module.exports = class extends MyHttpResponse {
     /**
@@ -25,7 +24,7 @@ module.exports = class extends MyHttpResponse {
                 switch (query) {
                     case 'EXPORTING':
                     case 'EXPORTED':
-                        const folder = Path.join(server.websiteSetting.root, UPLOAD_ROOT);
+                        const folder = Path.join(server.websiteSetting.root, Application.xb_export_folder);
                         this.getFileList(folder, query).then(fs => {
                             this.respString(req, 200, JSON.stringify(fs));
                         }).catch(err => {
@@ -41,7 +40,7 @@ module.exports = class extends MyHttpResponse {
                 if (query === 'DELETE') {
                     req.onceReqBodyRecvComplete(datas => {
                         const s = datas.join('');
-                        const path = Path.join(server.websiteSetting.root, UPLOAD_ROOT, s);
+                        const path = Path.join(server.websiteSetting.root, Application.xb_export_folder, s);
                         Application.fm.deleteFile(path).then(() => {
                             this.respString(req, 200);
                         }).catch(err => {
