@@ -27,7 +27,7 @@ module.exports = class extends MyHttpResponse {
     }
 
     handlePost(/**@type{MyHttpRequest} */req) {
-        if (!this.checkContentLen(req, 2, 8192)) return;
+        if (this.respIfContLenNotInRange(req, 2, 8192)) return;
         req.onceReqBodyRecvComplete(buf => {
             try {
                 const obj = JSON.parse(buf);

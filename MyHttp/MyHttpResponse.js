@@ -60,7 +60,7 @@ class MyHttpResponse extends Http.ServerResponse {
      * 暂停接收流并响应错误
      * @param {MyHttpRequest} req 
      * @param {Number} statusCode 
-     * @param {String} errstr 
+     * @param {String} errstr client收不到这条消息，估计client不是全双工-_-!!!
      */
     respErrorAndPauseRecvStream(req, statusCode, errstr) {
         req.on('readable', () => req.pause());      //停止接收
@@ -81,11 +81,9 @@ class MyHttpResponse extends Http.ServerResponse {
     /**
      * @param {MyHttpRequest} req 
      * @param {string} path
-     * @param {IMyServer} server
-     * @param {boolean} sendContentType 设置响应头content-type 默认true
-     * @param {string} customContentType 自定义content-type
+     * @param {string} customContentType 自定义content-type 对于普通文件请设置为\*\/*防止被浏览器作为可执行文件运行;
      */
-    respFile(req, path, server, sendContentType = true, customContentType = undefined) {
+    respFile(req, path, customContentType = undefined) {
         FS.stat(path, (err, stat) => {
             if (err) {
                 if (err.code === 'ENOENT')
@@ -98,7 +96,7 @@ class MyHttpResponse extends Http.ServerResponse {
                 this.respError(req, 400, `the request file is not a file!`);
                 return;
             }
-            this.respFile_(req, path, stat, sendContentType, customContentType);
+            this.respFile_(req, path, stat, customContentType);
         });
     }
 
@@ -106,12 +104,11 @@ class MyHttpResponse extends Http.ServerResponse {
      * @param {MyHttpRequest} req 
      * @param {string} path
      * @param {FS.Stats} stat path对应的fs.stats，必须确保stat.isFile()为true才行
-     * @param {boolean} sendContentType 设置响应头content-type 默认true
-     * @param {string} customContentType 自定义content-type
+     * @param {string} customContentType 自定义content-type 对于普通文件请设置为\*\/*防止被浏览器作为可执行文件运行;
      */
-    async respFile_(req, path, stat, sendContentType = true, customContentType = undefined) {
+    async respFile_(req, path, stat, customContentType = undefined) {
         Assert(stat.isFile(), 'resp file is not a file: ' + path);
-        const t = customContentType || (sendContentType ? HttpConst.DOC_CONT_TYPE[Path.extname(path).toLocaleLowerCase()] || '*/*' : '*/*');
+        const t = customContentType || (HttpConst.DOC_CONT_TYPE[Path.extname(path).toLocaleLowerCase()] || '*/*');
 
         let fh = null;
         try {
@@ -139,69 +136,71 @@ class MyHttpResponse extends Http.ServerResponse {
     }
 
     /**
-     * 检查是否对应的请求方法，不匹配将自动回复405错误，并返回false
+     * 检查是否对应的请求方法，不匹配将自动回复405错误，并返回true
      * @param {MyHttpRequest} req
      * @param {HttpConst.METHOD} method 
      */
-    checkIsMethod(req, method) {
+    respIfMethodIsNot(req, method) {
         if (req.method !== method) {
             this.respError(req, 405);
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**
-     * 检查请求体长度，如果小于minLen，自动回复400，如果大于maxLen，自动回复413
+     * 检查请求体长度，如果小于minLen，自动回复400，如果大于maxLen，自动回复413，并返回true
      * @param {MyHttpRequest} req 
      * @param {number} minLen 默认值1
-     * @param {number} maxLen 默认值0 表示不检查最大长度
-     * @returns {number}检查成功返回content-len，失败就返回0,
+     * @param {number} maxLen 默认值1095216660480
+     * @returns {boolean}
      */
-    checkContentLen(req, minLen = 1, maxLen = 0) {
+    respIfContLenNotInRange(req, minLen = 1, maxLen = 1095216660480) {
         const _bodyLen = parseInt(req.headers[HttpConst.HEADER["Content-Length"]]);
+
 
         if (_bodyLen < minLen) {
             this.respError(req, 400, `content-length is too small`);
-            return 0;
+            return true;
         }
 
         if (maxLen && _bodyLen > maxLen) {
             this.respError(req, 413);
-            return 0;
+            return true;
         }
+        req.headers[HttpConst.HEADER["Content-Length"]] = _bodyLen;
 
-        return _bodyLen;
+        return false;
     }
 
     /**
-     * 检查query是否string，不匹配将自动回复400错误，并返回false
+     * 检查query是否string，不匹配将自动回复400错误，并返回true
      * @param {MyHttpRequest} req
-     * @param {string} query
+     * @param {string|string[]} query
      * @param {string} queryname 用于响应时提示client那个query类型错误     
      * @returns {boolean} 
      */
-    checkQueryIsStr(req, query, queryname) {
+    respIfQueryIsNotStr(req, query, queryname) {
         if (typeof query !== 'string') {
             this.respError(req, 400, `query type error：'${queryname}' must be string`);
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**
-     * 检查query是否array，不匹配将自动回复400错误，并返回false
+     * 检查query是否array，不匹配将自动回复400错误，并返回true
      * @param {MyHttpRequest} req
      * @param {string[]} query
      * @param {string} queryname 用于响应时提示client那个query类型错误     
      * @returns {boolean} 
      */
-    checkQueryIsArray(req, query, queryname) {
+    respIfQueryIsNotArray(req, query, queryname) {
         if (!Array.isArray(query)) {
             this.respError(req, 400, `query type error：'${queryname}' must be array`);
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
 
@@ -268,9 +267,9 @@ class MyHttpResponse extends Http.ServerResponse {
      * 如果解析成功，调用callback()；失败则自动响应400
      */
     handleJSON(req, callback) {
-        req.onceReqBodyRecvComplete(buf => {
+        req.onceReqBodyRecvComplete(bufs => {
             try {
-                const obj = JSON.parse(buf);
+                const obj = JSON.parse(bufs.join(""));
                 callback(obj);
             } catch (error) {
                 this.respError(req, 400, error.toString());

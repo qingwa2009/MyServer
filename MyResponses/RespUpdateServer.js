@@ -15,7 +15,7 @@ module.exports = class extends MyHttpResponse {
         const logPath = `${Path.dirname(__dirname)}/updateServer.log`;
         //-------------------
         if (req.method !== HttpConst.METHOD.Post) {
-            this.respFile(req, logPath, server, true, HttpConst.CONTENT_TYPE.GBK);
+            this.respFile(req, logPath, HttpConst.CONTENT_TYPE.GBK);
             return;
         }
         //权限验证，没写  

@@ -37,7 +37,7 @@ module.exports = class extends MyHttpResponse {
     }
 
     handlePost(/**@type{MyHttpRequest} */req) {
-        if (!this.checkContentLen(req, 2, 65535)) return;
+        if (this.respIfContLenNotInRange(req, 2, 65535)) return;
         this.handleJSON(req, (/**@type{MyTableData} */obj) => {
             try {
                 MyTableData.decorate(obj);

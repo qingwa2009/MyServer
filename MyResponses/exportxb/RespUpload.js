@@ -10,18 +10,24 @@ module.exports = class extends MyHttpResponse {
      * @param {IMyServer} server
      */
     response(req, server) {
-        // req.socket.setTimeout(1000);
-        if (!this.checkIsMethod(req, HttpConst.METHOD.Post)) return;
-        if (!this.checkContentLen(req)) return;
+        if (this.respIfMethodIsNot(req, HttpConst.METHOD.Post)) return;
+        if (this.respIfContLenNotInRange(req, 1, 1024 * 1024 * 1024 * 2)) return;
 
         let fileName = req.headers['file-name'];
         if (!fileName) {
             this.respError(req, 400, `header must contain: file-name!`);
             return;
         }
-        fileName = decodeURI(fileName);
-        fileName = fileName.replace(/\s/ig, " ");//所有空白字符替换成空格
-        const path = Path.join(server.websiteSetting.root, Application.xb_export_folder, fileName);
+
+        let path;
+        try {
+            fileName = decodeURI(fileName);
+            fileName = fileName.replace(/\s/ig, " ");//所有空白字符替换成空格
+            path = Path.join(server.websiteSetting.root, Application.xb_export_folder, fileName);
+        } catch (error) {
+            this.respError(req, 500, error.message);
+            return;
+        }
         this.handleUpload(req, path);
     }
 

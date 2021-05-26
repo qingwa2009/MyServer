@@ -710,6 +710,7 @@ function testJSON() {
     }
 
     const querys = querystring.parse('a=1&a=2');
+    console.log(typeof querys['b']);
     console.log(Array.isArray(querys['a']));
 
     const datas = [];
@@ -719,6 +720,8 @@ function testJSON() {
     console.log(JSON.parse(datas));
 
     console.log(datas.join(''));
+
+    console.log(JSON.parse(['{', '"a":', '1,', '"b":2}'].join("")));
 
 }
 
@@ -1069,13 +1072,15 @@ function testBetterSqlite3Injection() {
     console.log(ret);
 }
 
-// testResp();
+testResp();
 async function testResp() {
     [
         '/upload',
         '/uploaddownload',
-        '/exportxbfilelist',
-        '/exportxbupload',
+        '/exportxb/filelist',
+        '/exportxb/upload',
+        '/exportxb/delete',
+        '/exportxb/download',
         // '/restart',
         // '/updatewebsite',
         // '/updateserver',

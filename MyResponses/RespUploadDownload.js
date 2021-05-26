@@ -15,14 +15,15 @@ module.exports = class extends MyHttpResponse {
      * @param {IMyServer} server
      */
     response(req, server) {
-
         if (req.method === HttpConst.METHOD.Post) {
-            if (!this.checkContentLen(req, 1, 1095216660480)) return;
+            //上传
+            if (this.respIfContLenNotInRange(req, 1, 1095216660480)) return;
             let fileName = req.headers['file-name'];
             if (!fileName) {
                 this.respError(req, 400, `header must contain: file-name!`);
                 return;
             }
+            if (this.respIfQueryIsNotStr(req, fileName, 'file-name')) return;
             fileName = decodeURI(fileName);
             const path = Path.join(server.websiteSetting.upload_folder, fileName);
             this.handleUpload(req, path);
@@ -31,7 +32,7 @@ module.exports = class extends MyHttpResponse {
 
         const del = req.querys[module.exports.CMD_DEL];
         if (del) {
-            if (!this.checkQueryIsStr(req, del, module.exports.CMD_DEL)) return;
+            if (this.respIfQueryIsNotStr(req, del, module.exports.CMD_DEL)) return;
             const path = Path.join(server.websiteSetting.upload_folder, decodeURI(del));
             this.handleDeleteFile(req, path);
             return;
@@ -42,10 +43,10 @@ module.exports = class extends MyHttpResponse {
             this.handleGetFileList(req, server.websiteSetting.upload_folder);
             return;
         } else {
-            if (!this.checkQueryIsStr(req, f, module.exports.CMD_FILE)) return;
+            if (this.respIfQueryIsNotStr(req, f, module.exports.CMD_FILE)) return;
 
             const path = Path.join(server.websiteSetting.upload_folder, decodeURI(f));
-            this.handleGetFile(req, server, path);
+            this.handleGetFile(req, path);
             return;
         }
 
@@ -94,12 +95,11 @@ module.exports = class extends MyHttpResponse {
         return [stat.fileName, stat.size, formatDate(stat.mtime)];
     }
     /**
-     * @param {MyHttpRequest} req 
-     * @param {IMyServer} server 
+     * @param {MyHttpRequest} req      
      * @param {string} path 
      */
-    handleGetFile(req, server, path) {
-        this.respFile(req, path, server, false);
+    handleGetFile(req, path) {
+        this.respFile(req, path, "*/*");
     }
 }
 
