@@ -1072,7 +1072,7 @@ function testBetterSqlite3Injection() {
     console.log(ret);
 }
 
-testResp();
+// testResp();
 async function testResp() {
     [
         '/upload',
@@ -1084,7 +1084,8 @@ async function testResp() {
         // '/restart',
         // '/updatewebsite',
         // '/updateserver',
-        '/usersetting'
+        '/usersetting',
+        '/myplm/selectitems',
     ].forEach(url => {
 
         const options = {
@@ -1178,3 +1179,160 @@ async function testResp() {
 
 
 }
+
+// testOracle();
+async function testOracle() {
+    const oracledb = require("oracledb");
+    const cnn = await oracledb.getConnection({
+        connectString: "192.168.0.84:1521/plm.shianco.com.cn",
+        password: "********",
+        user: '***',
+    });
+    const MySqlite = require("./MySqlite/MySqlite.js")
+    const db = new MySqlite('./test/myplm.db');
+
+
+    // cnn.execute("select * from T_PDM_ITEM").then(res => {
+    // const cols = [];
+    // for (const col of res.metaData) {
+    //     cols.push(col.name);
+    // };
+    // db.prepare(`create table if not exists T_PDM_ITEM (${cols.join(',')})`).run();
+
+    // db.transaction((rs) => {
+    //     db.prepare("delete from T_PDM_ITEM");
+    //     const stmt = db.prepare(`insert into T_PDM_ITEM values (${new Array(res.metaData.length).fill("?").join(",")})`);
+    //     for (const r of rs) {
+    //         for (let i = 0; i < r.length; i++) {
+    //             if (r[i] instanceof Date) r[i] = r[i].getTime();
+    //         }
+    //         stmt.run(r);
+    //     }
+    // }).immediate(res.rows)
+
+    // console.log(res.rows);
+    // });
+
+
+    // cnn.execute("select * from T_PUB_CODE").then(res => {
+    //     const cols = [];
+    //     for (const col of res.metaData) {
+    //         cols.push(col.name);
+    //     };
+    //     db.prepare(`create table if not exists T_PUB_CODE (${cols.join(',')})`).run();
+
+    //     db.transaction((rs) => {
+    //         db.prepare("delete from T_PUB_CODE");
+    //         const stmt = db.prepare(`insert into T_PUB_CODE values (${new Array(res.metaData.length).fill("?").join(",")})`);
+    //         for (const r of rs) {
+    //             for (let i = 0; i < r.length; i++) {
+    //                 if (r[i] instanceof Date) r[i] = r[i].getTime();
+    //             }
+    //             stmt.run(r);
+    //         }
+    //     }).immediate(res.rows)
+
+    //     // console.log(res);
+    // });
+
+    // cnn.execute("select * from T_PDM_ITEMTYPE").then(res => {
+    //     const cols = [];
+    //     for (const col of res.metaData) {
+    //         cols.push(col.name);
+    //     };
+    //     db.prepare(`create table if not exists T_PDM_ITEMTYPE (${cols.join(',')})`).run();
+
+    //     db.transaction((rs) => {
+    //         db.prepare("delete from T_PDM_ITEMTYPE");
+    //         const stmt = db.prepare(`insert into T_PDM_ITEMTYPE values (${new Array(res.metaData.length).fill("?").join(",")})`);
+    //         for (const r of rs) {
+    //             for (let i = 0; i < r.length; i++) {
+    //                 if (r[i] instanceof Date) r[i] = r[i].getTime();
+    //             }
+    //             stmt.run(r);
+    //         }
+    //     }).immediate(res.rows)
+
+    //     // console.log(res);
+    // });
+
+
+    // cnn.execute("select * from T_PDM_ITEM_FORMULA").then(res => {
+    //     const cols = [];
+    //     for (const col of res.metaData) {
+    //         cols.push(col.name);
+    //     };
+    //     db.prepare(`create table if not exists T_PDM_ITEM_FORMULA (${cols.join(',')})`).run();
+
+    //     db.transaction((rs) => {
+    //         db.prepare("delete from T_PDM_ITEM_FORMULA");
+    //         const stmt = db.prepare(`insert into T_PDM_ITEM_FORMULA values (${new Array(res.metaData.length).fill("?").join(",")})`);
+    //         for (const r of rs) {
+    //             for (let i = 0; i < r.length; i++) {
+    //                 if (r[i] instanceof Date) r[i] = r[i].getTime();
+    //             }
+    //             stmt.run(r);
+    //         }
+    //     }).immediate(res.rows)
+
+    //     // console.log(res);
+    // });
+
+
+    // cnn.execute("select * from T_SYS_USER").then(res => {
+    //     const cols = [];
+    //     for (const col of res.metaData) {
+    //         cols.push(col.name);
+    //     };
+    //     db.prepare(`create table if not exists T_SYS_USER (${cols.join(',')})`).run();
+
+    //     db.transaction((rs) => {
+    //         db.prepare("delete from T_SYS_USER");
+    //         const stmt = db.prepare(`insert into T_SYS_USER values (${new Array(res.metaData.length).fill("?").join(",")})`);
+    //         for (const r of rs) {
+    //             for (let i = 0; i < r.length; i++) {
+    //                 if (r[i] instanceof Date) r[i] = r[i].getTime();
+    //             }
+    //             stmt.run(r);
+    //         }
+    //     }).immediate(res.rows)
+
+    //     // console.log(res);
+    // });
+}
+
+// testMyDbCriteria();
+function testMyDbCriteria() {
+    const MyDbCriteria = require("./MySqlite/MyDbCriteria");
+    let c = new MyDbCriteria();
+    c.addWhere("field1", "=", "abc");
+    c.addWhere("", "=", undefined);
+    c.addWhere("t.field2", "like", "%d");
+    c.addWhere("field3", "in", { func: "", param: ["a", "b", "c"] });
+    c.addWhere("t.field4", "<>", false);
+    c.addWhere("field5", "<>", 1);
+
+    c.addOrderBy("field6", "asc");
+    c.addOrderBy("t.field7", "desc");
+    console.log(c.toCriteria());
+
+    console.log(new MyDbCriteria().toCriteria());
+
+    c = new MyDbCriteria();
+    c.addWhere("abc", "=", "ac");
+    console.log(c.toCriteria());
+}
+
+
+// testDbMyPLM();
+function testDbMyPLM() {
+    const DbMyPLM = require('./sample/DbMyPLM.js');
+    const dbmyplm = new DbMyPLM();
+    const st = new Date().getTime();
+    for (let i = 0; i < 5; i++) {
+        let mtd = dbmyplm.selectItems("where t.RD_NO like 'AT%'", "order by 研发编号 DESC", [], i * 1, 10);
+        console.log(mtd.count, mtd.totalCount, mtd.data[0]);
+    }
+    console.log(`耗时:${new Date().getTime() - st}`);
+}
+

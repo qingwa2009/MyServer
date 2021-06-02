@@ -8,6 +8,7 @@ const Application = require("../Application");
 const MyHttpRequest = require('./MyHttpRequest');
 const IMyServer = require('./IMyServer');
 const { LOG, WARN, ERROR, MyFileManager } = require('../MyUtil');
+const { MyDbCriteria } = require('../MySqlite');
 
 //==========MyHttpResponse==========
 class MyHttpResponse extends Http.ServerResponse {
@@ -275,6 +276,23 @@ class MyHttpResponse extends Http.ServerResponse {
                 this.respError(req, 400, error.toString());
             }
         });
+    }
+
+    /**
+     * 处理POST过来的MyDbCriteria数据，如果解析失败自动响应400
+     * @param {MyHttpRequest} req 
+     * @param {(criteria:MyDbCriteria)=>{}} callback 
+     * 如果解析成功，调用callback()；失败则自动响应400
+     */
+    handleDbCriteria(req, callback) {
+        this.handleJSON(req, (obj) => {
+            try {
+                MyDbCriteria.decorate(obj)
+                callback(obj);
+            } catch (error) {
+                this.respError(req, 400, error.toString());
+            }
+        })
     }
 
 

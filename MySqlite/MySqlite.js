@@ -1,4 +1,5 @@
 const Assert = require("assert");
+const { ERROR, WARN, LOG } = require("../MyUtil");
 const Database = require("better-sqlite3");
 const MyTableData = require("./MyTableData");
 // SQLite3	|   JavaScript
@@ -21,6 +22,7 @@ class MySqlite extends Database {
     _init() {
         this.pragma("journal_mode = WAL");
         this.pragma("foreign_keys = 1");
+        WARN(this.name, "database opened!");
     }
     /**     
      * @param {Database} db 
@@ -57,6 +59,7 @@ class MySqlite extends Database {
             mtd.data.push(dt);
         }
         mtd.count = mtd.data.length;
+        mtd.totalCount = mtd.count;
         mtd.EOF = true;
         return mtd;
     }

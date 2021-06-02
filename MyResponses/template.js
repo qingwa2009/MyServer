@@ -9,16 +9,20 @@ module.exports = class extends MyHttpResponse {
      * @param {IMyServer} server
      */
     response(req, server) {
-        switch (req.method) {
-            case HttpConst.METHOD.Get:
-                this.handleGet(req);
-                break;
-            case HttpConst.METHOD.Post:
-                this.handlePost(req);
-                break;
-            default:
-                this.respError(req, 405, "please use 'GET' or 'POST' method!");
-                break;
+        try {
+            switch (req.method) {
+                case HttpConst.METHOD.Get:
+                    this.handleGet(req);
+                    break;
+                case HttpConst.METHOD.Post:
+                    this.handlePost(req);
+                    break;
+                default:
+                    this.respError(req, 405, "please use 'GET' or 'POST' method!");
+                    break;
+            }
+        } catch (error) {
+            this.respError(req, 500, error.message);
         }
     }
 
@@ -28,14 +32,8 @@ module.exports = class extends MyHttpResponse {
 
     handlePost(/**@type{MyHttpRequest} */req) {
         if (this.respIfContLenNotInRange(req, 2, 8192)) return;
-        req.onceReqBodyRecvComplete(buf => {
-            try {
-                const obj = JSON.parse(buf);
-                console.log(obj);
-            } catch (error) {
-                this.respError(req, 400, error.toString());
-            }
-
+        this.handleJSON(req, (obj) => {
+            console.log(obj);
             this.respString(req, 200);
         });
     }
