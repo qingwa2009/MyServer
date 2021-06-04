@@ -42,11 +42,45 @@ LEFT JOIN ${T_SYS_USER} stu ON stu.USERNO=t.UPDATE_USER
 
 `;
 
+const SQL_DROPDOWN_LISTS = {
+    /**产品材质*/
+    productmat: "SELECT STAFF_NO, NAME FROM T_PDM_PRO_STAFF ORDER BY STAFF_NO",
+    /**产品年份*/
+    productyear: "SELECT YEAR_NO, NAME FROM T_PDM_PRO_YEAR ORDER BY YEAR_NO",
+    /**产品大类*/
+    productbtype: "SELECT TYPE_NO, NAME FROM T_PDM_PRO_BTYPE ORDER BY TYPE_NO",
+    /**产品中类*/
+    productmtype: "SELECT PARENT_TYPE_NO, TYPE_NO, NAME FROM T_PDM_PRO_MTYPE ORDER BY PARENT_TYPE_NO, TYPE_NO",
+    /**产品设计师*/
+    productdesigner: "SELECT CODE_NO, CODE_NAME FROM T_PUB_CODE WHERE CODE='DESIGNER' ORDER BY CODE_NO",
+    /**物料大类、中类、小类、小小类编号*/
+    itemtype: "SELECT TYPE_NO,TYPE_NAME FROM  T_PDM_ITEMTYPE ORDER BY TYPE_NO",
+    /**物料计价公式*/
+    itemformula: "SELECT FORMULA_NO,REMARK FROM T_PDM_ITEM_FORMULA",
+    /**物料状态*/
+    itemstatus: "SELECT CODE_NO, CODE_NAME FROM T_PUB_CODE WHERE code='ITEM_STATUS' ORDER BY CODE_NO",
+    /**BOM状态*/
+    bomstatus: "SELECT CODE_NO, CODE_NAME FROM T_PUB_CODE WHERE code='BOM_STATUS' ORDER BY CODE_NO",
+    /**客户列表*/
+    customer: "SELECT CUSTOMER_NO, CUSTOMER_NAME FROM T_CRM_CUSTOMER ORDER BY CUSTOMER_NAME",
+    /**研发设计人员列表*/
+    rddesigners: `
+        SELECT DISTINCT u.USERNO, u.USERNAME
+        FROM T_SYS_USERGROUP g
+        LEFT JOIN T_SYS_USER u ON u.USERNO=g.USERNO 
+        LEFT JOIN T_SYS_GROUP v ON v.GROUPNO=g.GROUPNO 
+        WHERE g.GROUPNO IN ('RD-研发设计部组员', 'RD-研发设计部组长', 'RD-研发设计部课长') 
+        ORDER BY NLSSORT(u.USERNAME, 'NLS_SORT=SCHINESE_PINYIN_M') 
+    `,
+    /**角色组列表*/
+    rolegroup: "SELECT GROUPNO, GROUPNAME FROM T_SYS_GROUP",
+};
+
 class DbMyPLM {
 
     constructor() {
         this.db = new MySqlite(path, { verbose: LOG });
-
+        this._stmt_dropdowns = {};
     }
 
     /**
@@ -72,6 +106,20 @@ class DbMyPLM {
         mtd.lasColumnSetAsTotalCount(true);
         mtd.setEOF(mtd.totalCount, offset);
 
+        return mtd;
+    }
+
+    /**name必须全小写 */
+    getListItems(name) {
+        if (!SQL_DROPDOWN_LISTS[name]) {
+            const mtd = new MyTableData();
+            mtd.error = `dropdown list '${name}' is not exists!`;
+            return mtd;
+        }
+        if (!this._stmt_dropdowns[name]) {
+            this._stmt_dropdowns[name] = this.db.prepare(SQL_DROPDOWN_LISTS[name]);
+        }
+        const mtd = MySqlite.getMyTableData(this._stmt_dropdowns[name]);
         return mtd;
     }
 

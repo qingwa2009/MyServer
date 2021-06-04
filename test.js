@@ -31,9 +31,9 @@ function testGetFileState() {
 
 }
 
-// testQueryString();
+testQueryString();
 function testQueryString() {
-    let url = "/%E5%AF%BC%E5%87%BAx_t?a=123&a=456&b=5&c=/%E5%AF%BC%E5%87%BA&d="
+    let url = "/%E5%AF%BC%E5%87%BAx_t?A=123&a=456&b=5&c=/%E5%AF%BC%E5%87%BA&d="
 
     let ret = querystring.parse(url);
     console.log(ret);
@@ -43,6 +43,9 @@ function testQueryString() {
 
     ret = querystring.parse(p.query);
     console.log(ret);
+
+    console.log(Object.keys(ret));
+
 }
 
 // testBuffer();

@@ -98,5 +98,7 @@ class DbSetting {
         this.stmt_delUserSetting.run(user, list);
     }
 
+
+
 }
 module.exports = DbSetting;
