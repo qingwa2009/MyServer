@@ -5,7 +5,7 @@ const { MySqlite, MyTableData } = require("../MySqlite");
 const { ERROR, LOG } = MyUtil;
 
 const TB_USER_LIST_SETTING = "tb_user_list_setting";
-const path = Path.join(__dirname, 'test.db');
+const path = Path.join(__dirname, 'setting.db');
 
 class DbSetting {
 

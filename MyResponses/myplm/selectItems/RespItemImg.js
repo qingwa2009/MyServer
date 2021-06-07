@@ -4,7 +4,7 @@ const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../../.
 const Application = require("../../../Application");
 const { LOG, WARN, ERROR } = require('../../../MyUtil');
 
-const itemImgFolder = Path.resolve(__dirname, "../../../sample/itemImgs");
+let itemImgFolder = "";//= Path.resolve(__dirname, "../../../sample/itemImgs");
 const qImg = "img";
 const qItemNo = "itemno";
 module.exports = class extends MyHttpResponse {
@@ -13,6 +13,7 @@ module.exports = class extends MyHttpResponse {
      * @param {IMyServer} server
      */
     response(req, server) {
+        itemImgFolder = Path.resolve(server.websiteSetting.root, "./img/itemImgs");
         try {
             switch (req.method) {
                 case HttpConst.METHOD.Get:
