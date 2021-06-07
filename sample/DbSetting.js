@@ -10,7 +10,7 @@ const path = Path.join(__dirname, 'test.db');
 class DbSetting {
 
     constructor() {
-        this.db = new MySqlite(path, { verbose: LOG });
+        this.db = new MySqlite(path, { verbose: (sql) => { LOG("", sql) } });
         this._tryCreateTbSetting();
     }
 

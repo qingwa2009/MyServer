@@ -179,11 +179,16 @@ class MyHttpResponse extends Http.ServerResponse {
      * @param {MyHttpRequest} req
      * @param {string|string[]} query
      * @param {string} queryname 用于响应时提示client那个query类型错误     
+     * @param {boolean} orEmpty 空字符串是否也报错，默认false
      * @returns {boolean} 
      */
-    respIfQueryIsNotStr(req, query, queryname) {
+    respIfQueryIsNotStr(req, query, queryname, orEmpty = false) {
         if (typeof query !== 'string') {
             this.respError(req, 400, `query type error：'${queryname}' must be string`);
+            return true;
+        }
+        if (orEmpty && query === "") {
+            this.respError(req, 400, `query type error：'${queryname}' must not be empty string`);
             return true;
         }
         return false;

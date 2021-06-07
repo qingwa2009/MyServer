@@ -76,10 +76,15 @@ const SQL_DROPDOWN_LISTS = {
     rolegroup: "SELECT GROUPNO, GROUPNAME FROM T_SYS_GROUP",
 };
 
+const SQL_UPDATE_ITME_LAST_UPDATETIME = `
+    UPDATE ${T_PDM_ITEM} SET UPDATE_TIME = datetime('now') 
+    WHERE ITEM_NO = ?
+`;
+
 class DbMyPLM {
 
     constructor() {
-        this.db = new MySqlite(path, { verbose: LOG });
+        this.db = new MySqlite(path, { verbose: (sql) => { LOG("", sql) } });
         this._stmt_dropdowns = {};
     }
 
@@ -107,6 +112,19 @@ class DbMyPLM {
         mtd.setEOF(mtd.totalCount, offset);
 
         return mtd;
+    }
+
+    /**
+     * 更新物料的更新时间
+     * @param {string} itemNo 
+     * @returns {boolean}
+     */
+    updateItemLastUpdateTime(itemNo) {
+        if (!this._stmt_updateItemLastUpdateTime) {
+            this._stmt_updateItemLastUpdateTime = this.db.prepare(SQL_UPDATE_ITME_LAST_UPDATETIME);
+        }
+        const ret = this._stmt_updateItemLastUpdateTime.run(itemNo).changes > 0;
+        return ret;
     }
 
     /**name必须全小写 */

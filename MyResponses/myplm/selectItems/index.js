@@ -3,4 +3,5 @@
 module.exports = {
     //key必须全小写    
     '/myplm/selectitems': require('./RespSelectItems'),
+    '/myplm/itemimg': require('./RespItemImg'),
 }
