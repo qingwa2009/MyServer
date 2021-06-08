@@ -71,6 +71,7 @@ class MyTableData {
     /**
      * 如果obj不包含title或者data将报错
      * @param {{}} obj 
+     * @returns {MyTableData}
      * @throws new TypeError("Its not MyTableData!")
      */
     static decorate(obj) {
@@ -80,6 +81,7 @@ class MyTableData {
         if (!obj.hasOwnProperty("data")) throw new TypeError("Its not MyTableData!");
 
         Object.setPrototypeOf(obj, MyTableData.prototype);
+        return obj
     }
 
 }

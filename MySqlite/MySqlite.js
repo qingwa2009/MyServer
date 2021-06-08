@@ -33,34 +33,40 @@ class MySqlite extends Database {
     }
 
     /**
-     * @param {string} sql      
+     * 如果执行过程有错误，返回值的error属性将包含错误信息
+     * @param {string} sql     
      */
     getMyTableData(sql, ...params) {
-        return MySqlite.getMyTableData(this.prepare(sql), ...params);
+        let stmt;
+        try {
+            stmt = this.prepare(sql);
+        } catch (error) {
+            const mtd = new MyTableData();
+            mtd.error = error.toString();
+            return mtd;
+        }
+        return MySqlite.getMyTableData(stmt, ...params);
     }
 
     /**
+     * 如果执行过程有错误，返回值的error属性将包含错误信息
      * @param {Database.Statement} stmt 
      * @returns {MyTableData}
      */
     static getMyTableData(stmt, ...params) {
         var mtd = new MyTableData();
-        stmt.columns().forEach(v => {
-            mtd.title.push(v.name);
-            mtd.type.push(v.type);
-        });
-        const n = mtd.title.length;
-        for (const row of stmt.iterate(...params)) {
-            const dt = new Array(n);
-            for (let i = 0; i < n; i++) {
-                const column = mtd.title[i];
-                dt[i] = row[column];
-            }
-            mtd.data.push(dt);
+        try {
+            stmt.columns().forEach(v => {
+                mtd.title.push(v.name);
+                mtd.type.push(v.type);
+            });
+            mtd.data = stmt.raw().all(...params);
+            mtd.count = mtd.data.length;
+            mtd.totalCount = mtd.count;
+            mtd.EOF = true;
+        } catch (error) {
+            mtd.error = error.toString();
         }
-        mtd.count = mtd.data.length;
-        mtd.totalCount = mtd.count;
-        mtd.EOF = true;
         return mtd;
     }
 

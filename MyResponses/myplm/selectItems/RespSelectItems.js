@@ -34,20 +34,19 @@ module.exports = class extends MyHttpResponse {
     handlePost(/**@type{MyHttpRequest} */req) {
         if (this.respIfContLenNotInRange(req, 2, 8192)) return;
         this.handleDbCriteria(req, (criteria) => {
+            const offset = parseInt(req.querys["offset"]);
+            let c;
             try {
-                const offset = parseInt(req.querys["offset"]);
-                let c;
-                try {
-                    c = criteria.toCriteria();
-                } catch (error) {
-                    this.respError(req, 400, error.message);
-                    return;
-                }
-                const mtd = Application.dbMyPLM.selectItems(c.where, c.orderby, c.values, offset ? offset : 0);
-                this.respString(req, 200, mtd.toString());
+                c = criteria.toCriteria();
             } catch (error) {
-                this.respError(req, 500, error.message);
+                this.respError(req, 400, error.message);
+                return;
             }
+            Application.dbMyPLMPool.selectItems(c.where, c.orderby, c.values, offset ? offset : 0).then(mtd => {
+                this.respString(req, 200, mtd.toString());
+            }, error => {
+                this.respError(req, 500, error.message);
+            });
         });
     }
 }

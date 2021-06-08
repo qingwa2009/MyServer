@@ -16,3 +16,4 @@ websiteSetting.json
 updateServer.bat
 updateServer.log
 sample/itemImgs/**
+sample/*.rar

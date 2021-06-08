@@ -48,13 +48,7 @@ class DbSetting {
         }
 
         const params = list ? [user, list] : user;
-        try {
-            return MySqlite.getMyTableData(this[s], params);
-        } catch (error) {
-            const mtd = new MyTableData();
-            mtd.error = error.toString();
-            return mtd;
-        }
+        return MySqlite.getMyTableData(this[s], params);
     }
 
 
@@ -68,15 +62,17 @@ class DbSetting {
         if (!this.tran_saveUserSetting) {
             this.tran_saveUserSetting = this.db.transaction((user, list, /**@type{{col:string, width:number}[]} */data) => {
                 this.deleteUserSetting(user, list);
-                const stmt = this.db.prepare(`
-                    INSERT INTO ${TB_USER_LIST_SETTING}
-                    (user, list, col, width, pos) 
-                    VALUES (?, ?, ?, ?, ?)
-                `);
+                if (!this.stmt_insUserSetting) {
+                    this.stmt_insUserSetting = this.db.prepare(`
+                        INSERT INTO ${TB_USER_LIST_SETTING}
+                        (user, list, col, width, pos) 
+                        VALUES (?, ?, ?, ?, ?)
+                    `);
+                }
                 const n = data.length;
                 for (let i = 0; i < n; i++) {
                     const v = data[i];
-                    stmt.run(user, list, v.col, v.width, i);
+                    this.stmt_insUserSetting.run(user, list, v.col, v.width, i);
                 }
             });
         }

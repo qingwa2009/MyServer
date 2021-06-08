@@ -54,7 +54,7 @@ module.exports = class MyServer extends IMyServer {
 
     /**所有连接都关闭时才会触发close事件 */
     stop() {
-        Application.fm.releaseAllFileReading();
+        Application.releaseAllResources();
 
         if (!this.server.listening) {
             WARN(this.toString(), "Can not stop! server is not listening!");

@@ -108,9 +108,10 @@ class DbMyPLM {
             this._stmt_selectItems = this.db.prepare(sql);
         }
         const mtd = MySqlite.getMyTableData(this._stmt_selectItems, [...values, count, offset]);
-        mtd.lasColumnSetAsTotalCount(true);
-        mtd.setEOF(mtd.totalCount, offset);
-
+        if (!mtd.error) {
+            mtd.lasColumnSetAsTotalCount(true);
+            mtd.setEOF(mtd.totalCount, offset);
+        }
         return mtd;
     }
 
@@ -127,7 +128,10 @@ class DbMyPLM {
         return ret;
     }
 
-    /**name必须全小写 */
+    /**
+     * @param {string} name  必须全小写
+     * @returns {MyTableData}
+     */
     getListItems(name) {
         if (!SQL_DROPDOWN_LISTS[name]) {
             const mtd = new MyTableData();

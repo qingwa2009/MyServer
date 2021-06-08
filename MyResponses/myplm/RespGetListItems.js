@@ -32,12 +32,13 @@ module.exports = class extends MyHttpResponse {
             this.respError(req, 400, "url must contains query");
             return;
         }
-        try {
-            const mtd = Application.dbMyPLM.getListItems(name.toLowerCase());
-            this.respString(req, 200, mtd.toString());
-        } catch (error) {
+
+        Application.dbMyPLMPool.getListItems(name.toLowerCase()).then(mtd => {
+            this.respString(req, 200, JSON.stringify(mtd));
+        }, error => {
             this.respError(req, 400, error.message);
-        }
+        });
+
     }
 
     handlePost(/**@type{MyHttpRequest} */req) {

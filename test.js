@@ -31,7 +31,7 @@ function testGetFileState() {
 
 }
 
-testQueryString();
+// testQueryString();
 function testQueryString() {
     let url = "/%E5%AF%BC%E5%87%BAx_t?A=123&a=456&b=5&c=/%E5%AF%BC%E5%87%BA&d="
 
@@ -1339,3 +1339,93 @@ function testDbMyPLM() {
     console.log(`耗时:${new Date().getTime() - st}`);
 }
 
+// testMessagePort();
+function testMessagePort() {
+    const { MessagePort, MessageChannel } = require("worker_threads");
+    let mc = new MessageChannel();
+    mc.port1.on("message", msg => console.log("port1:", msg));
+    mc.port1.on("close", () => console.log("port1 closed"));
+    mc.port2.on("message", msg => {
+        if (msg instanceof Uint8Array) {
+            msg[0] = 111;
+        }
+        console.log("port2:", msg);
+    });
+    mc.port2.on("close", () => console.log("port2 closed"));
+
+
+    const buf = Buffer.from("abc");
+    const buf2 = Buffer.from("123");
+    console.log("buf.buffer === buf2.buffer:", buf.buffer === buf2.buffer);
+
+    mc.port1.postMessage("1 hi i am port1!");
+    mc.port2.postMessage("2 hi i am port2 , lala");
+    // mc.port1.postMessage(buf);//传递一个副本
+    mc.port1.postMessage(buf, [buf.buffer]);//buf被移过去后就不能用了
+
+    const sbuf = new Uint8Array(new SharedArrayBuffer(4));
+    // mc.port1.postMessage(sbuf, [sbuf.buffer]);SharedArrayBuffer移不了
+    mc.port1.postMessage(sbuf);
+    sbuf[0] = 125;
+
+    setTimeout(() => {
+        console.log(buf, buf.byteOffset, buf.length);//buf被移过去后就不能用了
+        console.log(buf2, buf2.byteOffset, buf2.length);//buf2也不能用了
+        console.log(sbuf);
+        mc.port1.close();
+    }, 100);
+}
+
+// testWorker();
+function testWorker() {
+    const { isMainThread, parentPort, Worker } = require("worker_threads");
+    if (isMainThread) {
+        let buf = Buffer.from("abc");
+        console.log(buf.byteOffset, buf.byteLength);
+        let w = new Worker(__filename);
+        w.postMessage("lala");
+        w.on("error", err => console.error("error:", err));
+        w.on("exit", exitCode => console.log("eixtcode:", exitCode));
+
+        setTimeout(() => {
+            // w.terminate().then(exitCode => {
+            //     console.log(exitCode);
+            // })
+            w.unref();
+        }, 100);
+    } else {
+        parentPort.on("message", msg => {
+            console.log("worker: ", msg);
+        })
+        parentPort.on("close", (...args) => {
+            console.log("worker: close ", args);
+        })
+        // process.exit(0);
+        // throw new Error("i am error");
+    }
+
+}
+
+testMyPLMPool()
+function testMyPLMPool() {
+    const DbMyPLMPool = require("./sample/DbMyPLMPool");
+    const pool = new DbMyPLMPool();
+    const ps = [];
+    const st = new Date().getTime();
+    for (let i = 0; i < 5; i++) {
+        // ps.push(pool.asyncQuery("selectItems").then(mtd => {
+        //     console.log(mtd.totalCount);
+        // }, err => {
+        //     console.error(err);
+        // }));
+        ps.push(pool.selectItems("where rd_no like 'AT%'").then(mtd => {
+            console.log(mtd.totalCount);
+        }, err => {
+            console.error(err);
+        }))
+    }
+
+    Promise.all(ps).then(() => {
+        console.log("耗时", new Date().getTime() - st);
+    })
+}
