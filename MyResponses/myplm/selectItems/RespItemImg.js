@@ -48,7 +48,7 @@ module.exports = class extends MyHttpResponse {
         const itemNo = req.querys[qItemNo];
         if (this.respIfQueryIsNotStr(req, itemNo, qItemNo, true)) return;
         if (path) {
-            Application.dbMyPLMPool.updateItemLastUpdateTime(itemNo).then(b => {
+            Application.dbMyPLM.updateItemLastUpdateTime(itemNo).then(b => {
 
             }, error => {
 

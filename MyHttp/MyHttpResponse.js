@@ -8,7 +8,7 @@ const Application = require("../Application");
 const MyHttpRequest = require('./MyHttpRequest');
 const IMyServer = require('./IMyServer');
 const { LOG, WARN, ERROR, MyFileManager } = require('../MyUtil');
-const { MyDbCriteria } = require('../MySqlite');
+const { MyDbCriteria, MyTableData } = require('../MySqlite');
 
 //==========MyHttpResponse==========
 class MyHttpResponse extends Http.ServerResponse {
@@ -129,7 +129,7 @@ class MyHttpResponse extends Http.ServerResponse {
                 WARN(this.toString(), `success pipe file ${path}!`);
             },
             error => {
-                WARN(this.toString(), `failed pipe file ${path} : `, error.message);
+                WARN(this.toString(), `failed pipe file ${path} : `, error.stack || error.message);
                 this.destroy(error);
                 req.destroy(error);
             }
@@ -284,6 +284,23 @@ class MyHttpResponse extends Http.ServerResponse {
     }
 
     /**
+     * 处理POST过来的MyTableData数据，如果解析失败自动响应400
+     * @param {MyHttpRequest} req 
+     * @param {(mtd:MyTableData)=>{}} callback 
+     * 如果解析成功，调用callback()；失败则自动响应400
+     */
+    handleMyTableData(req, callback) {
+        this.handleJSON(req, (obj) => {
+            try {
+                MyTableData.decorate(obj);
+                callback(obj);
+            } catch (error) {
+                this.respError(req, 400, error.toString());
+            }
+        })
+    }
+
+    /**
      * 处理POST过来的MyDbCriteria数据，如果解析失败自动响应400
      * @param {MyHttpRequest} req 
      * @param {(criteria:MyDbCriteria)=>{}} callback 
@@ -292,7 +309,7 @@ class MyHttpResponse extends Http.ServerResponse {
     handleDbCriteria(req, callback) {
         this.handleJSON(req, (obj) => {
             try {
-                MyDbCriteria.decorate(obj)
+                MyDbCriteria.decorate(obj);
                 callback(obj);
             } catch (error) {
                 this.respError(req, 400, error.toString());

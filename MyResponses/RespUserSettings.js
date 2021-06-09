@@ -28,30 +28,28 @@ module.exports = class extends MyHttpResponse {
         let user = req.querys["user"];
         const list = req.querys["list"];
         if (!user) user = req.Session.name;
-        try {
-            const mtd = Application.dbSetting.selectUserSettings(user, list);
+
+        Application.dbSetting.selectUserSettings(user, list).then(mtd => {
             this.respString(req, 200, mtd.toString());
-        } catch (error) {
-            this.respError(req, 400, error.message);
-        }
+        }, error => {
+            this.respError(req, 500, error.message);
+        });
     }
 
     handlePost(/**@type{MyHttpRequest} */req) {
         if (this.respIfContLenNotInRange(req, 2, 65535)) return;
-        this.handleJSON(req, (/**@type{MyTableData} */obj) => {
-            try {
-                MyTableData.decorate(obj);
-                const user = req.Session.name;
-                const list = obj.list;
-                const data = [];
-                for (const dt of obj.iterator(true)) {
-                    data.push(dt);
-                }
-                Application.dbSetting.saveUserSetting(user, list, data);
-                this.respError(req, 200);
-            } catch (error) {
-                this.respError(req, 400, error.message);
+        this.handleMyTableData(req, mtd => {
+            const user = req.Session.name;
+            const list = obj.list;
+            const data = [];
+            for (const dt of obj.iterator(true)) {
+                data.push(dt);
             }
+            Application.dbSetting.saveUserSetting(user, list, data).then(() => {
+                this.respString(req, 200);
+            }, error => {
+                this.respError(req, 400, error.message);
+            });
         });
     }
 

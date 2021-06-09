@@ -1037,7 +1037,7 @@ async function testBetterSqlite3() {
 
 // testDbSetting();
 function testDbSetting() {
-    MyUtil.setEnableLog(true);
+    // MyUtil.setEnableLog(true);
     const DbSetting = require('./sample/DbSetting');
     const dbsetting = new DbSetting();
     const values = [
@@ -1050,19 +1050,68 @@ function testDbSetting() {
         { col: "g", width: 0 },
     ];
     try {
-        dbsetting.saveUserSetting('', '', values);
+        dbsetting.saveUserSetting(null, '', values);
     } catch (error) {
-        console.log(error.message);
+        console.log("saveUserSetting error:", error);
     }
     dbsetting.saveUserSetting('guest', 'list0', values);
     dbsetting.saveUserSetting('guest', 'list1', values);
 
-    dbsetting.deleteUserSetting('guest');
-    dbsetting.deleteUserSetting('guest', 'list1');
+    console.log("deleteUserSetting", dbsetting.deleteUserSetting('guest'));
+    console.log("deleteUserSetting", dbsetting.deleteUserSetting('guest', 'list1'));
 
     console.log(dbsetting.selectUserSettings('guest'));
     console.log(dbsetting.selectUserSettings('guest', 'list0'));
     console.log(dbsetting.selectUserSettings('guest', 'list1'));
+
+}
+
+// testDbSettingPool();
+function testDbSettingPool() {
+    MyUtil.setEnableLog(true);
+    const DbSetting = require('./sample/DbSetting');
+    const dbsetting = new DbSetting(true);
+    const values = [
+        { col: "a", width: 60 },
+        { col: "b", width: 70 },
+        { col: "c", width: 80 },
+        { col: "d", width: 90 },
+        { col: "e", width: 0 },
+        { col: "f", width: 100 },
+        { col: "g", width: 0 },
+    ];
+    dbsetting.saveUserSetting(null, '', values).catch(error => {
+        // console.error("saveUserSetting error:", error);
+    });
+
+    dbsetting.saveUserSetting('guest', 'list0', values).catch(error => {
+
+    });
+    dbsetting.saveUserSetting('guest', 'list1', values).catch(error => {
+
+    });
+
+    dbsetting.deleteUserSetting('guest').then(b => {
+        console.log("deleteUserSetting", b);
+    }).catch(error => {
+        console.error("deleteUserSetting", error);
+    });
+
+    dbsetting.deleteUserSetting('guest', 'list1').then(b => {
+        console.log("deleteUserSetting", b);
+    }).catch(error => {
+        console.error("deleteUserSetting", error);
+    });
+
+    dbsetting.selectUserSettings('guest').then(mtd => {
+        console.log(mtd);
+    });
+    dbsetting.selectUserSettings('guest', 'list0').then(mtd => {
+        console.log(mtd);
+    });
+    dbsetting.selectUserSettings('guest', 'list1').then(mtd => {
+        console.log(mtd);
+    });
 
 }
 
@@ -1337,6 +1386,33 @@ function testDbMyPLM() {
         console.log(mtd.count, mtd.totalCount, mtd.data[0]);
     }
     console.log(`耗时:${new Date().getTime() - st}`);
+    dbmyplm.close();
+}
+
+testMyPLMPool()
+function testMyPLMPool() {
+    const DbMyPLM = require("./sample/DbMyPLM");
+    const pool = new DbMyPLM(true);
+    const ps = [];
+    const st = new Date().getTime();
+    for (let i = 0; i < 5; i++) {
+        ps.push(pool.selectItems("where rd_no like 'AT%'").then(mtd => {
+            console.log(mtd.totalCount);
+        }, err => {
+            console.error(err);
+        }))
+    }
+
+    Promise.all(ps).then(() => {
+        console.log("耗时", new Date().getTime() - st);
+        console.log("pool closing");
+        pool.close().then(() => {
+            console.log("pool closed!");
+            setTimeout(() => {
+                console.log(pool.pool.status());
+            }, 10);
+        });
+    })
 }
 
 // testMessagePort();
@@ -1406,26 +1482,3 @@ function testWorker() {
 
 }
 
-testMyPLMPool()
-function testMyPLMPool() {
-    const DbMyPLMPool = require("./sample/DbMyPLMPool");
-    const pool = new DbMyPLMPool();
-    const ps = [];
-    const st = new Date().getTime();
-    for (let i = 0; i < 5; i++) {
-        // ps.push(pool.asyncQuery("selectItems").then(mtd => {
-        //     console.log(mtd.totalCount);
-        // }, err => {
-        //     console.error(err);
-        // }));
-        ps.push(pool.selectItems("where rd_no like 'AT%'").then(mtd => {
-            console.log(mtd.totalCount);
-        }, err => {
-            console.error(err);
-        }))
-    }
-
-    Promise.all(ps).then(() => {
-        console.log("耗时", new Date().getTime() - st);
-    })
-}

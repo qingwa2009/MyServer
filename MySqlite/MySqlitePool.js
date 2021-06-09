@@ -11,9 +11,9 @@ class MySqlitePool {
      */
     constructor(path, size = os.cpus().length) {
         /**@type{Worker[]} */
-        this.workers = [];
+        this._workers = [];
         /**@type{{resolve:function, reject:function, msg: {method:string, params:[]}}[]} */
-        this.jobsQueue = [];
+        this._jobsQueue = [];
 
         for (let i = 0; i < size; i++) {
             this._spawn(path);
@@ -27,7 +27,7 @@ class MySqlitePool {
         w._error = null;
 
         w.on("online", () => {
-            this.workers.push(w);
+            this._workers.push(w);
             this._takeJob(w);
         }).on("message", msg => {
             w._job.resolve(msg);
@@ -35,28 +35,30 @@ class MySqlitePool {
             this._takeJob(w);
         }).on("error", err => {
             w._error = err;
-            WARN("db worker error: ", err.toString());
+            WARN("Mysqlite worker error: ", err.stack);
         }).on("exit", exitCode => {
-            const i = this.workers.indexOf(w);
+            const i = this._workers.indexOf(w);
             if (i > -1) {
-                this.workers.splice(i, 1);
+                this._workers.splice(i, 1);
             }
 
             if (w._job) {
-                w._job.reject(w._error || new Error("db worker died!"));
+                w._job.reject(w._error || new Error("Mysqlite worker died!"));
                 w._job = null;
             }
             //不正常关闭就重新开线程
             if (exitCode !== 0) {
-                WARN(`db worker exitcode:`, exitCode);
+                WARN(`Mysqlite worker exitcode:${exitCode}; respawn...`);
                 this._spawn(path);
+            } else {
+                WARN(`Mysqlite worker exit!`);
             }
         });
     }
 
     _takeJob(/**@type{Worker} */w) {
-        if (!w._job && this.jobsQueue.length) {
-            const job = this.jobsQueue.shift();
+        if (!w._job && this._jobsQueue.length) {
+            const job = this._jobsQueue.shift();
             w._job = job;
             w._error = null;
             w.postMessage(job.msg);
@@ -64,7 +66,7 @@ class MySqlitePool {
     }
 
     _allFreeWorkersTakeJob() {
-        for (const w of this.workers) {
+        for (const w of this._workers) {
             this._takeJob(w);
         }
     }
@@ -77,9 +79,25 @@ class MySqlitePool {
      */
     asyncQuery(method, ...params) {
         return new Promise((resolve, reject) => {
-            this.jobsQueue.push({ resolve, reject, msg: { method, params } });
+            this._jobsQueue.push({ resolve, reject, msg: { method, params } });
             this._allFreeWorkersTakeJob();
         })
+    }
+
+    status() {
+        return `thread count:${this._workers.length}\njobs in queue:${this._jobsQueue.length}`;
+    }
+
+    /**
+     * @returns{Promise<void>}
+     */
+    close() {
+        const n = this._workers.length;
+        const ps = [];
+        for (let i = 0; i < n; i++) {
+            ps.push(this.asyncQuery("close").catch(err => { }));
+        }
+        return Promise.all(ps);
     }
 }
 

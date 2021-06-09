@@ -29,7 +29,7 @@ class WSSamples extends IMyWebSocketHandler {
      * @param {NodeJS.ErrnoException} err
      */
     _onError(ws, err) {
-        WARN(err);
+        WARN(err.stack || err);
     }
 
     /**

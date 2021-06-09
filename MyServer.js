@@ -39,6 +39,8 @@ module.exports = class MyServer extends IMyServer {
             return;
         }
 
+        Application.initDb();
+
         this.port = this.isHttps ? this.websiteSetting.https_port : this.websiteSetting.http_port;
         this.ip = this.websiteSetting.ip;
         if (!this.ip) {
@@ -76,6 +78,8 @@ module.exports = class MyServer extends IMyServer {
         st['fileManager'] = await Application.fm.status();
         st['webSocket'] = WEBSOCKET_HANDLER_LIST.status();
         st['debug'] = { log: MyUtil.getEnableLog(), warn: MyUtil.getEnableWarn(), error: MyUtil.getEnableError(), weblog: MyUtil.getEnableWeblog() };
+        st["db"] = { dbMyPLM: Application.dbMyPLM.status(), dbSetting: Application.dbSetting.status() };
+
         return JSON.stringify(st);
     }
 
@@ -111,7 +115,7 @@ module.exports = class MyServer extends IMyServer {
      * @param {Net.Socket} sock 
      */
     _OnClientError(err, sock) {
-        MyUtil.WARN(sock.toString(), `clientError: ${err.message}`);
+        MyUtil.WARN(sock.toString(), `clientError: ${err.message}${err.stack}`);
         if (err.code === 'ECONNRESET' || !sock.writable) return;
         sock.end(`HTTP/1.1 400 clientError ${err}\r\n\r\n`);
     }

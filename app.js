@@ -1,7 +1,5 @@
 'use strict';
 const MyUtil = require('./MyUtil');
-const Application = require("./Application");
-Application.initDb();
 
 const Assert = require('assert');
 const FS = require('fs');

@@ -1,9 +1,10 @@
+const { isMainThread } = require("worker_threads");
 const Path = require("path");
 const Assert = require("assert");
 const MyUtil = require("../MyUtil");
-const { MySqlite, MyTableData } = require("../MySqlite");
+const { MySqlite, MySqliteWorker, MySqlitePool, MyTableData, IMySqliteWorkerable } = require("../MySqlite");
 const { ERROR, WARN, LOG } = MyUtil;
-const path = Path.join(__dirname, 'myplm.db');
+const dbPath = Path.join(__dirname, 'myplm.db');
 
 const T_PDM_ITEM = "T_PDM_ITEM";
 const T_PDM_ITEMTYPE = "T_PDM_ITEMTYPE";
@@ -81,11 +82,23 @@ const SQL_UPDATE_ITME_LAST_UPDATETIME = `
     WHERE ITEM_NO = ?
 `;
 
-class DbMyPLM {
+class DbMyPLM extends IMySqliteWorkerable {
 
-    constructor() {
-        this.db = new MySqlite(path, { verbose: (sql) => { LOG("", sql) } });
+    /**
+     * @param {boolean} usePool 是否使用线程池
+     * @param {number} poolSize 可选默认cpu核心数 
+     */
+    constructor(usePool, poolSize) {
+        super(dbPath, { verbose: (sql) => { LOG("", sql) } }, __filename, usePool, poolSize);
+    }
+
+    _initAsDb() {
+        // Assert(false, "必须重载！");
         this._stmt_dropdowns = {};
+    }
+
+    _initAsDbPool() {
+        // Assert(false, "必须重载！");
     }
 
     /**
@@ -95,8 +108,11 @@ class DbMyPLM {
      * @param {Object[]} values 子句所有要绑定的参数
      * @param {number} offset 偏移
      * @param {number} count 数量 
+     * @returns {MyTableData|Promise<MyTableData>}
      */
     selectItems(where = '', orderBy = '', values = [], offset = 0, count = MAX_ROWS) {
+        if (this.pool) return this.pool.asyncQuery("selectItems", ...arguments).then(mtd => MyTableData.decorate(mtd));
+
         WARN("selectItems %s %s offset=%s count=%s", where, orderBy, offset, count);
         const sql = `
             ${SQL_SELECT_ITEM_BASE}
@@ -112,15 +128,19 @@ class DbMyPLM {
             mtd.lasColumnSetAsTotalCount(true);
             mtd.setEOF(mtd.totalCount, offset);
         }
+
+
         return mtd;
     }
 
     /**
      * 更新物料的更新时间
      * @param {string} itemNo 
-     * @returns {boolean}
+     * @returns {boolean|Promise<boolean>}
      */
     updateItemLastUpdateTime(itemNo) {
+        if (this.pool) return this.pool.asyncQuery("updateItemLastUpdateTime", ...arguments);
+
         if (!this._stmt_updateItemLastUpdateTime) {
             this._stmt_updateItemLastUpdateTime = this.db.prepare(SQL_UPDATE_ITME_LAST_UPDATETIME);
         }
@@ -130,9 +150,11 @@ class DbMyPLM {
 
     /**
      * @param {string} name  必须全小写
-     * @returns {MyTableData}
+     * @returns {MyTableData|Promise<MyTableData>}
      */
     getListItems(name) {
+        if (this.pool) return this.pool.asyncQuery("getListItems", ...arguments).then(mtd => MyTableData.decorate(mtd));;
+
         if (!SQL_DROPDOWN_LISTS[name]) {
             const mtd = new MyTableData();
             mtd.error = `dropdown list '${name}' is not exists!`;
@@ -145,5 +167,8 @@ class DbMyPLM {
         return mtd;
     }
 
+
+
 }
 module.exports = DbMyPLM;
+if (!isMainThread) new MySqliteWorker(new DbMyPLM());

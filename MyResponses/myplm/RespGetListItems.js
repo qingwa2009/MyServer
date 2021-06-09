@@ -33,7 +33,7 @@ module.exports = class extends MyHttpResponse {
             return;
         }
 
-        Application.dbMyPLMPool.getListItems(name.toLowerCase()).then(mtd => {
+        Application.dbMyPLM.getListItems(name.toLowerCase()).then(mtd => {
             this.respString(req, 200, JSON.stringify(mtd));
         }, error => {
             this.respError(req, 400, error.message);

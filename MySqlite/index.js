@@ -5,4 +5,5 @@ module.exports = {
     MyTableData: require("./MyTableData"),
     MySqlitePool: require("./MySqlitePool"),
     MySqliteWorker: require("./MySqliteWorker"),
+    IMySqliteWorkerable: require("./IMySqliteWorkerable"),
 }

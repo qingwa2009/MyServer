@@ -23,7 +23,7 @@ module.exports = class extends MyHttpResponse {
         }
 
         isUpdating = true;
-        Application.releaseAllResources();
+        Application.releaseAllResources().finally(() => { });
         setTimeout(() => {
             // child_process.execSync("chcp 65001");//命令行utf8编码 但是cd不进中文目录orz        
             child_process.execFile(Path.join(Path.dirname(server.websiteSetting.root), "updateWebsite.bat"), [], { encoding: Buffer }, (err, stdout, stderr) => {

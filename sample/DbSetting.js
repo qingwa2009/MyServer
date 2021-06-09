@@ -1,18 +1,33 @@
+const { isMainThread } = require("worker_threads");
 const Path = require("path");
 const Assert = require("assert");
 const MyUtil = require("../MyUtil");
-const { MySqlite, MyTableData } = require("../MySqlite");
+const { MySqlite, MySqliteWorker, MySqlitePool, MyTableData, IMySqliteWorkerable } = require("../MySqlite");
 const { ERROR, LOG } = MyUtil;
 
 const TB_USER_LIST_SETTING = "tb_user_list_setting";
-const path = Path.join(__dirname, 'setting.db');
+const dbPath = Path.join(__dirname, 'setting.db');
 
-class DbSetting {
 
-    constructor() {
-        this.db = new MySqlite(path, { verbose: (sql) => { LOG("", sql) } });
+
+class DbSetting extends IMySqliteWorkerable {
+    /**
+     * @param {boolean} usePool 是否使用线程池
+     * @param {number} poolSize 可选默认cpu核心数 
+     */
+    constructor(usePool, poolSize) {
+        super(dbPath, { verbose: (sql) => { LOG("", sql) } }, __filename, usePool, poolSize);
+    }
+
+    _initAsDb() {
+        // Assert(false, "必须重载！");
         this._tryCreateTbSetting();
     }
+
+    _initAsDbPool() {
+        // Assert(false, "必须重载！");
+    }
+
 
     _tryCreateTbSetting() {
         const sql = `
@@ -32,9 +47,11 @@ class DbSetting {
      * 如果查询失败，error会被赋值
      * @param {string} user 
      * @param {string} list 表格名
-     * @returns {MyTableData}
+     * @returns {MyTableData|Promise<MyTableData>}
      */
     selectUserSettings(user, list = undefined) {
+        if (this.pool) return this.pool.asyncQuery("selectUserSettings", ...arguments).then(mtd => MyTableData.decorate(mtd));
+
         const s = list ? "stmt_selectUserSetting" : "stmt_selectUserSettings";
         let stmt = this[s];
         if (!stmt) {
@@ -57,8 +74,11 @@ class DbSetting {
      * @param {string} user 
      * @param {string} list 表格名
      * @param {{col:string, width:number}[]} data 
+     * @throws {Error}
      */
     saveUserSetting(user, list, data) {
+        if (this.pool) return this.pool.asyncQuery("saveUserSetting", ...arguments);
+
         if (!this.tran_saveUserSetting) {
             this.tran_saveUserSetting = this.db.transaction((user, list, /**@type{{col:string, width:number}[]} */data) => {
                 this.deleteUserSetting(user, list);
@@ -77,24 +97,26 @@ class DbSetting {
             });
         }
 
+
         this.tran_saveUserSetting.immediate(user, list, data);
     }
 
     /**
      * @param {string} user 
      * @param {string} list 表格名
+     * @returns {boolean | Promise<boolean>}
      */
     deleteUserSetting(user, list) {
+        if (this.pool) return this.pool.asyncQuery("deleteUserSetting", ...arguments);
+
         if (!this.stmt_delUserSetting) {
             this.stmt_delUserSetting = this.db.prepare(`
                 DELETE FROM ${TB_USER_LIST_SETTING}
                 WHERE user=? and list=?
             `);
         }
-        this.stmt_delUserSetting.run(user, list);
+        return this.stmt_delUserSetting.run(user, list).changes > 0;
     }
-
-
-
 }
 module.exports = DbSetting;
+if (!isMainThread) new MySqliteWorker(new DbSetting());
