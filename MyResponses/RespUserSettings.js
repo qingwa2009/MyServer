@@ -40,9 +40,9 @@ module.exports = class extends MyHttpResponse {
         if (this.respIfContLenNotInRange(req, 2, 65535)) return;
         this.handleMyTableData(req, mtd => {
             const user = req.Session.name;
-            const list = obj.list;
+            const list = mtd.list;
             const data = [];
-            for (const dt of obj.iterator(true)) {
+            for (const dt of mtd.iterator(true)) {
                 data.push(dt);
             }
             Application.dbSetting.saveUserSetting(user, list, data).then(() => {
