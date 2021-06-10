@@ -36,6 +36,7 @@ module.exports = class extends MyHttpResponse {
                 this.statusCode = 200;
                 this.end(stdout);
                 isUpdating = false;
+                Application.initDb();
             });
         }, 3000);
     }
