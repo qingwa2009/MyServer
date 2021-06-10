@@ -25,8 +25,8 @@ module.exports = class extends MyHttpResponse {
     }
 
     handleGet(/**@type{MyHttpRequest} */req) {
-        let user = req.querys["user"];
-        const list = req.querys["list"];
+        let user = req.querys.get("user");
+        const list = req.querys.get("list");
         if (!user) user = req.Session.name;
 
         Application.dbSetting.selectUserSettings(user, list).then(mtd => {

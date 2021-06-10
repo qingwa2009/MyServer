@@ -174,41 +174,37 @@ class MyHttpResponse extends Http.ServerResponse {
         return false;
     }
 
+
     /**
-     * 检查query是否string，不匹配将自动回复400错误，并返回true
-     * @param {MyHttpRequest} req
-     * @param {string|string[]} query
-     * @param {string} queryname 用于响应时提示client那个query类型错误     
-     * @param {boolean} orEmpty 空字符串是否也报错，默认false
-     * @returns {boolean} 
+     * 检查query是否符合给定的条件类型，不符合将自动回复400错误，并返回true
+     * @param {MyHttpRequest} req 
+     * @param {Object<string, string|null|[]> } qFields 检查的条件string|null|[]\
+     * 取值string表示该字段必须有值，否则自动回复400错误，并返回true\
+     * 取值null表示该字段可选，可以为string也可以为null\
+     * 取值[]表示该字段有0-多个值\
+     * 取得的值将全部覆盖qFields对应字段并返回false；
      */
-    respIfQueryIsNotStr(req, query, queryname, orEmpty = false) {
-        if (typeof query !== 'string') {
-            this.respError(req, 400, `query type error：'${queryname}' must be string`);
-            return true;
-        }
-        if (orEmpty && query === "") {
-            this.respError(req, 400, `query type error：'${queryname}' must not be empty string`);
-            return true;
+    respIfQueryIsInvalid(req, qFields) {
+        const ks = Object.keys(qFields);
+        const n = ks.length
+        const querys = req.querys;
+        for (let i = 0; i < n; i++) {
+            const k = ks[i];
+            const v = qFields[k];
+            if (v === null) {
+                qFields[k] = querys.get(k);
+            } else if (v instanceof Array) {
+                qFields[k] = querys.getAll(k);
+            } else {
+                qFields[k] = querys.get(k);
+                if (qFields[k] === null) {
+                    this.respError(req, 400, `query type error：'${k}' must be string`);
+                    return true;
+                }
+            }
         }
         return false;
     }
-
-    /**
-     * 检查query是否array，不匹配将自动回复400错误，并返回true
-     * @param {MyHttpRequest} req
-     * @param {string[]} query
-     * @param {string} queryname 用于响应时提示client那个query类型错误     
-     * @returns {boolean} 
-     */
-    respIfQueryIsNotArray(req, query, queryname) {
-        if (!Array.isArray(query)) {
-            this.respError(req, 400, `query type error：'${queryname}' must be array`);
-            return true;
-        }
-        return false;
-    }
-
 
 
     /**

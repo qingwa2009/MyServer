@@ -15,15 +15,16 @@ module.exports = class extends MyHttpResponse {
         if (this.respIfMethodIsNot(req, HttpConst.METHOD.Get)) return;
         // if (this.respIfContLenNotInRange(req)) return;
 
-        let query = req.querys['type'];
-        if (this.respIfQueryIsNotStr(req, query, 'type')) return;
-        query = query.toUpperCase();
+        const qs = { type: "" };
+        if (this.respIfQueryIsInvalid(req, qs)) return;
 
-        switch (query) {
+        qs.type = qs.type.toUpperCase();
+
+        switch (qs.type) {
             case 'EXPORTING':
             case 'EXPORTED':
                 const folder = Path.join(server.websiteSetting.root, Application.xb_export_folder);
-                this.getFileList(folder, query).then(fs => {
+                this.getFileList(folder, qs.type).then(fs => {
                     this.respString(req, 200, JSON.stringify(fs));
                 }).catch(err => {
                     this.respString(req, 200, '[]');

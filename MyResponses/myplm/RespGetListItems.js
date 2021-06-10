@@ -27,7 +27,7 @@ module.exports = class extends MyHttpResponse {
     }
 
     handleGet(/**@type{MyHttpRequest} */req) {
-        const name = Object.keys(req.querys)[0];
+        const name = req.querys.keys().next().value;
         if (!name) {
             this.respError(req, 400, "url must contains query");
             return;

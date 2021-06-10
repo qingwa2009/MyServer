@@ -34,7 +34,7 @@ module.exports = class extends MyHttpResponse {
     handlePost(/**@type{MyHttpRequest} */req) {
         if (this.respIfContLenNotInRange(req, 2, 8192)) return;
         this.handleDbCriteria(req, (criteria) => {
-            const offset = parseInt(req.querys["offset"]);
+            const offset = parseInt(req.querys.get("offset") || 0);
             let c;
             try {
                 c = criteria.toCriteria();

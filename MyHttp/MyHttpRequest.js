@@ -41,11 +41,9 @@ class MyHttpRequest extends Http.IncomingMessage {
         }
         WARN(this.toString(), this.method, this.url, this.query);
     }
-    /**
-     * @returns {Object<string, string|string[]>} 
-     */
+
     get querys() {
-        return this._querys || (this._querys = QueryString.parse(this.query));
+        return this._querys || (this._querys = new URLSearchParams(this.query));
     }
 
 

@@ -12,13 +12,14 @@ module.exports = class extends MyHttpResponse {
     response(req, server) {
         if (this.respIfMethodIsNot(req, HttpConst.METHOD.Get)) return;
 
-        const f = req.querys['file'];
-        if (this.respIfQueryIsNotStr(req, f, 'file')) return;
-        if (f === "") {
+        const qs = { file: "" };
+        if (this.respIfQueryIsInvalid(req, qs)) return;
+
+        if (qs.file === "") {
             this.respError(req, 400, 'file name can not be empty!');
             return;
         }
-        const path = Path.join(server.websiteSetting.root, Application.xb_export_folder, decodeURI(f));
+        const path = Path.join(server.websiteSetting.root, Application.xb_export_folder, qs.file);
         this.respFile(req, path, "*/*");
     }
 

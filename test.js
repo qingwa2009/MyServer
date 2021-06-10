@@ -1389,7 +1389,7 @@ function testDbMyPLM() {
     dbmyplm.close();
 }
 
-testMyPLMPool()
+// testMyPLMPool()
 function testMyPLMPool() {
     const DbMyPLM = require("./sample/DbMyPLM");
     const pool = new DbMyPLM(true);
@@ -1480,5 +1480,14 @@ function testWorker() {
         // throw new Error("i am error");
     }
 
+}
+
+testURL();
+function testURL() {
+    const url = new URL("http://127.0.0.1/?我=啊啊&我=卡卡");
+    console.log(url.searchParams.get("a"));
+    console.log(url.searchParams.getAll("a"));
+    console.log(url.searchParams.get("我"));
+    console.log(url.searchParams.getAll("我"));
 }
 

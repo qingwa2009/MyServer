@@ -8,8 +8,6 @@ const { MyFileManager, formatDate } = require('../MyUtil');
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 module.exports = class extends MyHttpResponse {
-    static CMD_DEL = 'del';
-    static CMD_FILE = 'file';
     /**
      * @param {MyHttpRequest} req 
      * @param {IMyServer} server
@@ -19,38 +17,33 @@ module.exports = class extends MyHttpResponse {
             //上传
             if (this.respIfContLenNotInRange(req, 1, 1095216660480)) return;
             let fileName = req.headers['file-name'];
-            if (!fileName) {
-                this.respError(req, 400, `header must contain: file-name!`);
+            if (!fileName || (typeof fileName !== "string")) {
+                this.respError(req, 400, `header must contain: file-name string!`);
                 return;
             }
-            if (this.respIfQueryIsNotStr(req, fileName, 'file-name')) return;
             fileName = decodeURI(fileName);
             const path = Path.join(server.websiteSetting.upload_folder, fileName);
             this.handleUpload(req, path);
             return;
         }
 
-        const del = req.querys[module.exports.CMD_DEL];
-        if (del) {
-            if (this.respIfQueryIsNotStr(req, del, module.exports.CMD_DEL)) return;
-            const path = Path.join(server.websiteSetting.upload_folder, decodeURI(del));
+        const qs = { del: null, file: null };
+        if (this.respIfQueryIsInvalid(req, qs)) return;
+
+        if (qs.del) {
+            const path = Path.join(server.websiteSetting.upload_folder, qs.del);
             this.handleDeleteFile(req, path);
             return;
         }
 
-        const f = req.querys[module.exports.CMD_FILE] || '';
-        if (f === '') {
+        if (!qs.file) {
             this.handleGetFileList(req, server.websiteSetting.upload_folder);
             return;
         } else {
-            if (this.respIfQueryIsNotStr(req, f, module.exports.CMD_FILE)) return;
-
-            const path = Path.join(server.websiteSetting.upload_folder, decodeURI(f));
+            const path = Path.join(server.websiteSetting.upload_folder, qs.file);
             this.handleGetFile(req, path);
             return;
         }
-
-
     }
 
     /**

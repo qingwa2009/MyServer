@@ -31,27 +31,35 @@ module.exports = class extends MyHttpResponse {
         }
     }
 
-    getImgPathOrRespError(/**@type{MyHttpRequest} */req) {
-        const imgName = req.querys[qImg];
-        if (this.respIfQueryIsNotStr(req, imgName, qImg, true)) return null;
+    getImgPathOrRespError(imgName) {
+        if (!imgName) {
+            this.respError(req, 400, `query type error：img must not be empty string`);
+            return false;
+        }
         return Path.join(itemImgFolder, imgName.substr(0, 1), imgName.substr(0, 3), imgName);
     }
 
     handleGet(/**@type{MyHttpRequest} */req) {
-        let path = this.getImgPathOrRespError(req);
+        const qs = { img: "" };
+        if (this.respIfQueryIsInvalid(req, qs)) return;
+
+        let path = this.getImgPathOrRespError(qs.img);
         if (path) this.respFile(req, path, 'image/png');
     }
 
     handlePost(/**@type{MyHttpRequest} */req) {
         if (this.respIfContLenNotInRange(req, 2, 10 * 1024 * 1024)) return;
-        let path = this.getImgPathOrRespError(req);
-        const itemNo = req.querys[qItemNo];
-        if (this.respIfQueryIsNotStr(req, itemNo, qItemNo, true)) return;
+
+        const qs = { itemno: "", img: "" };
+        if (this.respIfQueryIsInvalid(req, qs)) return;
+        if (!qs.itemno) {
+            this.respError(req, 400, `query type error：itemno must not be empty string`);
+            return;
+        }
+        let path = this.getImgPathOrRespError(qs.img);
         if (path) {
             Application.dbMyPLM.updateItemLastUpdateTime(itemNo).then(b => {
-
             }, error => {
-
             });
             this.handleUpload(req, path);
         }
