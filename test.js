@@ -1137,7 +1137,7 @@ async function testResp() {
         // '/updatewebsite',
         // '/updateserver',
         '/usersetting',
-        '/myplm/selectitems',
+        '/myplm/item/search',
     ].forEach(url => {
 
         const options = {
@@ -1382,7 +1382,7 @@ function testDbMyPLM() {
     const dbmyplm = new DbMyPLM();
     const st = new Date().getTime();
     for (let i = 0; i < 5; i++) {
-        let mtd = dbmyplm.selectItems("where t.RD_NO like 'AT%'", "order by 研发编号 DESC", [], i * 1, 10);
+        let mtd = dbmyplm.searchItems("where t.RD_NO like 'AT%'", "order by 研发编号 DESC", [], i * 1, 10);
         console.log(mtd.count, mtd.totalCount, mtd.data[0]);
     }
     console.log(`耗时:${new Date().getTime() - st}`);
@@ -1396,7 +1396,7 @@ function testMyPLMPool() {
     const ps = [];
     const st = new Date().getTime();
     for (let i = 0; i < 5; i++) {
-        ps.push(pool.selectItems("where rd_no like 'AT%'").then(mtd => {
+        ps.push(pool.searchItems("where rd_no like 'AT%'").then(mtd => {
             console.log(mtd.totalCount);
         }, err => {
             console.error(err);
@@ -1482,7 +1482,7 @@ function testWorker() {
 
 }
 
-testURL();
+// testURL();
 function testURL() {
     const url = new URL("http://127.0.0.1/?我=啊啊&我=卡卡");
     console.log(url.searchParams.get("a"));
@@ -1491,3 +1491,12 @@ function testURL() {
     console.log(url.searchParams.getAll("我"));
 }
 
+testAAA()
+function testAAA() {
+    const DbMyPLM = require("./sample/DbMyPLM");
+    const db = new DbMyPLM(false);
+    console.log(db.db.prepare(`
+        SELECT * FROM T_PDM_ITEM
+        WHERE ITEM_NO=?
+    `).get("2241000048"));
+}

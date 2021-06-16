@@ -58,6 +58,14 @@ const SQL_DROPDOWN_LISTS = {
     itemtype: "SELECT TYPE_NO,TYPE_NAME FROM  T_PDM_ITEMTYPE ORDER BY TYPE_NO",
     /**物料计价公式*/
     itemformula: "SELECT FORMULA_NO,REMARK FROM T_PDM_ITEM_FORMULA",
+    /**物料计价计量单位 */
+    itemunit: "SELECT CODE_NO, CODE_NAME FROM T_PUB_CODE WHERE code='Unit' ORDER BY CODE_NO",
+    /**物料费用标志 */
+    itemflagfee: "SELECT CODE_NO, CODE_NAME FROM T_PUB_CODE WHERE code='ITEM_FLAG_FEE' ORDER BY CODE_NO",
+    /**物料开模信息*/
+    itemmoldinfo: "SELECT CODE_NO, CODE_NAME FROM T_PUB_CODE WHERE code='ITEM_MOLD_INFO' ORDER BY CODE_NO",
+    /**物料模具*/
+    itemmold: "SELECT CODE_NO, CODE_NAME || '-' || REMARKS FROM T_PUB_CODE WHERE code='PDM_MJ' ORDER BY CODE_NO",
     /**物料状态*/
     itemstatus: "SELECT CODE_NO, CODE_NAME FROM T_PUB_CODE WHERE code='ITEM_STATUS' ORDER BY CODE_NO",
     /**BOM状态*/
@@ -82,6 +90,11 @@ const SQL_UPDATE_ITME_LAST_UPDATETIME = `
     WHERE ITEM_NO = ?
 `;
 
+const SQL_SELECT_ITEM_LAST_UPDATETIME = `
+    SELECT UPDATE_TIME FROM ${T_PDM_ITEM} 
+    WHERE ITEM_NO = ?
+`;
+
 class DbMyPLM extends IMySqliteWorkerable {
 
     /**
@@ -101,6 +114,22 @@ class DbMyPLM extends IMySqliteWorkerable {
         // Assert(false, "必须重载！");
     }
 
+
+
+    /**
+     * select物料
+     * @param {string} itemno 
+     * @returns {Object<string, any>|Promise<Object<string, any>>}
+     */
+    selectItem(itemno) {
+        if (this.pool) return this.pool.asyncQuery("selectItem", ...arguments);
+
+        return this.db.prepare(`
+            SELECT * FROM ${T_PDM_ITEM} 
+            WHERE ITEM_NO=?
+        `).get(itemno);
+    }
+
     /**
      * 物料查询
      * @param {string} where where子句
@@ -110,20 +139,20 @@ class DbMyPLM extends IMySqliteWorkerable {
      * @param {number} count 数量 
      * @returns {MyTableData|Promise<MyTableData>}
      */
-    selectItems(where = '', orderBy = '', values = [], offset = 0, count = MAX_ROWS) {
-        if (this.pool) return this.pool.asyncQuery("selectItems", ...arguments).then(mtd => MyTableData.decorate(mtd));
+    searchItems(where = '', orderBy = '', values = [], offset = 0, count = MAX_ROWS) {
+        if (this.pool) return this.pool.asyncQuery("searchItems", ...arguments).then(mtd => MyTableData.decorate(mtd));
 
-        WARN("selectItems %s %s offset=%s count=%s", where, orderBy, offset, count);
+        WARN("searchItems %s %s offset=%s count=%s", where, orderBy, offset, count);
         const sql = `
             ${SQL_SELECT_ITEM_BASE}
             ${where ? where : ''}
             ${orderBy ? orderBy : ''}
             LIMIT ? OFFSET ?
         `;
-        if (!this._stmt_selectItems || this._stmt_selectItems.source !== sql) {
-            this._stmt_selectItems = this.db.prepare(sql);
+        if (!this._stmt_searchItems || this._stmt_searchItems.source !== sql) {
+            this._stmt_searchItems = this.db.prepare(sql);
         }
-        const mtd = MySqlite.getMyTableData(this._stmt_selectItems, [...values, count, offset]);
+        const mtd = MySqlite.getMyTableData(this._stmt_searchItems, [...values, count, offset]);
         if (!mtd.error) {
             mtd.lasColumnSetAsTotalCount(true);
             mtd.setEOF(mtd.totalCount, offset);
@@ -136,7 +165,7 @@ class DbMyPLM extends IMySqliteWorkerable {
     /**
      * 更新物料的更新时间
      * @param {string} itemNo 
-     * @returns {boolean|Promise<boolean>}
+     * @returns {number|Promise<number>} 返回更新后的时间
      */
     updateItemLastUpdateTime(itemNo) {
         if (this.pool) return this.pool.asyncQuery("updateItemLastUpdateTime", ...arguments);
@@ -144,8 +173,29 @@ class DbMyPLM extends IMySqliteWorkerable {
         if (!this._stmt_updateItemLastUpdateTime) {
             this._stmt_updateItemLastUpdateTime = this.db.prepare(SQL_UPDATE_ITME_LAST_UPDATETIME);
         }
-        const ret = this._stmt_updateItemLastUpdateTime.run(itemNo).changes > 0;
-        return ret;
+
+        this._stmt_updateItemLastUpdateTime.run(itemNo);
+
+        if (!this._stmt_selectItemLastUpdateTime) {
+            this._stmt_selectItemLastUpdateTime = this.db.prepare(SQL_SELECT_ITEM_LAST_UPDATETIME);
+        }
+
+        return this._stmt_selectItemLastUpdateTime.pluck().get(itemNo);
+    }
+
+    /**
+     * 获取物料的更新时间
+     * @param {string} itemNo 
+     * @returns {number|Promise<number>} 返回更新后的时间
+     */
+    selectItemLasUpdateTime(itemNo) {
+        if (this.pool) return this.pool.asyncQuery("selectItemLasUpdateTime", ...arguments);
+
+        if (!this._stmt_selectItemLastUpdateTime) {
+            this._stmt_selectItemLastUpdateTime = this.db.prepare(SQL_SELECT_ITEM_LAST_UPDATETIME);
+        }
+
+        return this._stmt_selectItemLastUpdateTime.pluck().get(itemNo);
     }
 
     /**

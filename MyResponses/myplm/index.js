@@ -1,6 +1,6 @@
 'use strict';
 module.exports = {
     //key必须全小写    
-    ...require('./selectItems'),
-    "/myplm/getlistitems": require("./RespGetListItems"),
+    ...require('./item'),
+    "/myplm/getlist": require("./RespGetList"),
 }

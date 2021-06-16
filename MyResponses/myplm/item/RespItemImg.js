@@ -5,8 +5,7 @@ const Application = require("../../../Application");
 const { LOG, WARN, ERROR } = require('../../../MyUtil');
 
 let itemImgFolder = "";//= Path.resolve(__dirname, "../../../sample/itemImgs");
-const qImg = "img";
-const qItemNo = "itemno";
+
 module.exports = class extends MyHttpResponse {
     /**
      * @param {MyHttpRequest} req 
@@ -50,13 +49,16 @@ module.exports = class extends MyHttpResponse {
     handlePost(/**@type{MyHttpRequest} */req) {
         if (this.respIfContLenNotInRange(req, 2, 10 * 1024 * 1024)) return;
 
-        const qs = { itemno: "", img: "" };
+        const qs = { itemno: "", img: "" };//物料编号跟图片名称
         if (this.respIfQueryIsInvalid(req, qs)) return;
         if (!qs.itemno) {
             this.respError(req, 400, `query type error：itemno must not be empty string`);
             return;
         }
-        let path = this.getImgPathOrRespError(qs.img);
+
+        let path = qs.itemno + Path.extname(qs.img);
+        path = this.getImgPathOrRespError(path);
+
         if (path) {
             Application.dbMyPLM.updateItemLastUpdateTime(itemNo).then(b => {
             }, error => {
