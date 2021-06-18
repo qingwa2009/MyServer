@@ -26,8 +26,27 @@ class MyHttpResponse extends Http.ServerResponse {
      * @param {IMyServer} server
      */
     response(req, server) {
+
         Assert(false, '必须重载该函数');
     }
+
+    /**
+     * 根据websiteSetting添加额外的响应头信息
+     * @param {MyHttpRequest} req       
+     */
+    _addExtraRespHeaders(req) {
+        if (!Application.websiteSetting.extra_resp_headers) return;
+
+        const url = req.url.toLowerCase();
+        const headers = Application.websiteSetting.extra_resp_headers[url];
+        if (!headers) return;
+
+        const keys = Object.keys(headers);
+        for (const key of keys) {
+            this.setHeader(key, headers[key]);
+        }
+    }
+
     /**
      * @param {MyHttpRequest} req 
      * @param {Number} statusCode 
@@ -36,7 +55,7 @@ class MyHttpResponse extends Http.ServerResponse {
     respString(req, statusCode, str = '') {
         this.statusCode = statusCode;
         this.statusMessage = Http.STATUS_CODES[statusCode];
-
+        this._addExtraRespHeaders(req);
         if (str) {
             const buf = Buffer.from(str);
             this.setHeader(HttpConst.HEADER["Content-Type"], HttpConst.CONTENT_TYPE.UTF8);
@@ -76,6 +95,7 @@ class MyHttpResponse extends Http.ServerResponse {
         this.statusCode = 302
         this.statusMessage = Http.STATUS_CODES[302];
         this.setHeader(HttpConst.HEADER.Location, location);
+        this._addExtraRespHeaders(req);
         this.end();
     }
 
@@ -119,6 +139,7 @@ class MyHttpResponse extends Http.ServerResponse {
             return;
         }
 
+        this._addExtraRespHeaders(req);
         this.setHeader(HttpConst.HEADER["Content-Type"], t);
         this.setHeader(HttpConst.HEADER["Content-Length"], stat.size);
         WARN(this.toString(), `piping file ${path}, total length: ${stat.size}bytes`);

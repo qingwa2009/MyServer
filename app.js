@@ -1,11 +1,11 @@
 'use strict';
 const MyUtil = require('./MyUtil');
-
 const Assert = require('assert');
 const FS = require('fs');
 const Path = require('path');
 const MyServer = require('./MyServer');
 const { IMyServerSetting } = require('./MyHttp');
+const Application = require('./Application');
 
 let httpsOptions = null;
 try {
@@ -17,38 +17,14 @@ try {
     MyUtil.ERROR(error);
 }
 
-/**@type {IMyServerSetting} */
-let websiteSetting = null;
-let need2save = false;
-const settingPath = Path.join(__dirname, '/websiteSetting.json');
-try {
-    websiteSetting = JSON.parse(FS.readFileSync(settingPath));
+Application.loadWebsiteSetting();
 
-    const tempSetting = new IMyServerSetting();
-    const ns = Object.getOwnPropertyNames(tempSetting);
-    for (let i = 0; i < ns.length; i++) {
-        const n = ns[i];
-        if (websiteSetting[n] === undefined) {
-            websiteSetting[n] = tempSetting[n];
-            need2save = true;
-        }
-    }
-} catch (e) {
-    websiteSetting = new IMyServerSetting();
-    need2save = true;
-}
-
-if (need2save) {
-    FS.writeFileSync(settingPath, JSON.stringify(websiteSetting));
-    console.log('websiteSetting saved!');
-}
-
-if (websiteSetting.https_port && httpsOptions) {
-    const httpsServer = new MyServer(websiteSetting, httpsOptions);
+if (Application.websiteSetting.https_port && httpsOptions) {
+    const httpsServer = new MyServer(Application.websiteSetting, httpsOptions);
     httpsServer.start();
 }
 
-if (websiteSetting.http_port) {
-    const httpServer = new MyServer(websiteSetting);
+if (Application.websiteSetting.http_port) {
+    const httpServer = new MyServer(Application.websiteSetting);
     httpServer.start();
 }

@@ -29,6 +29,8 @@ module.exports = class MyServer extends IMyServer {
         MyUtil.setEnableWarn(this.websiteSetting.debug_warn);
         MyUtil.setEnableError(this.websiteSetting.debug_error);
         MyUtil.setEnableWeblog(this.websiteSetting.enable_web_log);
+
+
         if (this.websiteSetting.enable_web_log)
             MyUtil.setWebLogger(WEBSOCKET_HANDLER_LIST.get('/weblog'));
     }
@@ -234,6 +236,8 @@ module.exports = class MyServer extends IMyServer {
                 //客户端不缓存文件
                 resp.setHeader(HttpConst.HEADER["Cache-Control"], HttpConst.HEADER["no-cache"]);
                 resp.setHeader(HttpConst.HEADER["Last-Modified"], `${lmt.getFullYear()}/${lmt.getMonth() + 1}/${lmt.getDate()} ${lmt.getHours()}:${lmt.getMinutes()}:${lmt.getSeconds()}`);
+
+
                 resp.respFile_(req, fPath, stat);
                 res();
             })

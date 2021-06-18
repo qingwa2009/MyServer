@@ -21,4 +21,15 @@ module.exports = class IMyServerSetting {
     debug_warn = true;
     /**是否打印error信息 */
     debug_error = true;
+    /**
+     * 响应额外的响应头信息, url必须全小写
+     * @type{Object<string, Object<string, string>>}
+     */
+    extra_resp_headers = {
+        // "/welcome.html": {
+        //     /**主页禁止被iframe引用 */
+        //     "X-Frame-Options": "deny",
+        // }
+    }
+
 }
