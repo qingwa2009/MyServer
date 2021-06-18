@@ -37,7 +37,7 @@ const availableFunctions = {
 }
 
 /**
- * 空格替换成_
+ * 空格替换成_ ，防止注入
  * @param {string} s 
  */
 function replaceSpace(s) {
@@ -45,7 +45,7 @@ function replaceSpace(s) {
 }
 
 /**
- * 解析字段名，字段名部分会被“”括起来，表名部分空格会被替换成_
+ * 解析字段名，字段名部分会被“”括起来，表名部分空格会被替换成_，防止注入
  * @param {string} field 
  */
 function parseFieldName(field) {
@@ -134,6 +134,34 @@ class MyDbCriteria {
         }
 
         Object.setPrototypeOf(obj, MyDbCriteria.prototype);
+    }
+
+    /**
+     * 创建用于update操作的语句块
+     * @param {Object<string, any>} json 
+     * @param {string} updateTimeFieldName 如果该参数不为空，则会附加该参数的字段名称，
+     * 并在返回的placeholders里相对位置填充CURRENT_TIMESTAMP
+     * @returns {{keys: '(f1, f2...)', placeholders: '(?, ?...)', values:[]}}
+     */
+    static createUpdateSQL(json, updateTimeFieldName = "") {
+        const keys = Object.keys(json);
+        const values = [];
+        const placeholders = [];
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            values.push(json[key]);
+            placeholders.push("?");
+            keys[i] = replaceSpace(key);
+        }
+        if (updateTimeFieldName) {
+            keys.push(updateTimeFieldName);
+            placeholders.push("CURRENT_TIMESTAMP");
+        }
+        return {
+            keys: `(${keys.join(", ")})`,
+            placeholders: `(${placeholders.join(", ")})`,
+            values
+        };
     }
 }
 

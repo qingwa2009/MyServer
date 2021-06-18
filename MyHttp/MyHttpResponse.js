@@ -287,7 +287,7 @@ class MyHttpResponse extends Http.ServerResponse {
      * 处理POST过来的JSON数据，如果解析失败自动响应400
      * @param {MyHttpRequest} req 
      * @param {(json:Object)=>{}} callback 
-     * 如果解析成功，调用callback()；失败则自动响应400
+     * 如果解析成功，调用callback()；失败则自动响应400，callback抛出的错误也会自动响应400
      */
     handleJSON(req, callback) {
         req.onceReqBodyRecvComplete(bufs => {
@@ -304,7 +304,7 @@ class MyHttpResponse extends Http.ServerResponse {
      * 处理POST过来的MyTableData数据，如果解析失败自动响应400
      * @param {MyHttpRequest} req 
      * @param {(mtd:MyTableData)=>{}} callback 
-     * 如果解析成功，调用callback()；失败则自动响应400
+     * 如果解析成功，调用callback()；失败则自动响应400，callback抛出的错误也会自动响应400
      */
     handleMyTableData(req, callback) {
         this.handleJSON(req, (obj) => {
@@ -321,7 +321,7 @@ class MyHttpResponse extends Http.ServerResponse {
      * 处理POST过来的MyDbCriteria数据，如果解析失败自动响应400
      * @param {MyHttpRequest} req 
      * @param {(criteria:MyDbCriteria)=>{}} callback 
-     * 如果解析成功，调用callback()；失败则自动响应400
+     * 如果解析成功，调用callback()；失败则自动响应400，callback抛出的错误也会自动响应400
      */
     handleDbCriteria(req, callback) {
         this.handleJSON(req, (obj) => {

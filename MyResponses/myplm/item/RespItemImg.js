@@ -56,11 +56,12 @@ module.exports = class extends MyHttpResponse {
             return;
         }
 
+        //图片名称用物料编号+文件名称后缀
         let path = qs.itemno + Path.extname(qs.img);
         path = this.getImgPathOrRespError(path);
 
         if (path) {
-            Application.dbMyPLM.updateItemLastUpdateTime(itemNo).then(b => {
+            Application.dbMyPLM.updateItemLastUpdateTime(qs.itemno).then(b => {
             }, error => {
             });
             this.handleUpload(req, path);

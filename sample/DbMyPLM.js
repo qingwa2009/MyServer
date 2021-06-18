@@ -2,7 +2,7 @@ const { isMainThread } = require("worker_threads");
 const Path = require("path");
 const Assert = require("assert");
 const MyUtil = require("../MyUtil");
-const { MySqlite, MySqliteWorker, MySqlitePool, MyTableData, IMySqliteWorkerable } = require("../MySqlite");
+const { MySqlite, MySqliteWorker, MySqlitePool, MyTableData, IMySqliteWorkerable, MyDbCriteria } = require("../MySqlite");
 const { ERROR, WARN, LOG } = MyUtil;
 const dbPath = Path.join(__dirname, 'myplm.db');
 
@@ -85,8 +85,13 @@ const SQL_DROPDOWN_LISTS = {
     rolegroup: "SELECT GROUPNO, GROUPNAME FROM T_SYS_GROUP",
 };
 
+const SQL_UPDATE_ITME_BASE = `
+    UPDATE ${T_PDM_ITEM} SET {0} = {1} 
+    WHERE ITEM_NO = ?
+`;
+
 const SQL_UPDATE_ITME_LAST_UPDATETIME = `
-    UPDATE ${T_PDM_ITEM} SET UPDATE_TIME = datetime('now') 
+    UPDATE ${T_PDM_ITEM} SET UPDATE_TIME = CURRENT_TIMESTAMP 
     WHERE ITEM_NO = ?
 `;
 
@@ -160,6 +165,38 @@ class DbMyPLM extends IMySqliteWorkerable {
 
 
         return mtd;
+    }
+
+    /**
+     * 更新物料
+     * @param {string} itemno
+     * @param {Object<string, any>} json
+     * @returns {Object<string, any>|Promise<Object<string, any>>} 返回更新后的数据
+     */
+    updateItem(itemno, json) {
+        if (this.pool) return this.pool.asyncQuery("updateItem", ...arguments);
+
+        /**重要字段防止被修改 */
+        const removeFields = ["ID", "ITEM_NO", "CREATE_TIME", "CREATE_USER", "UPDATE_TIME"];
+        for (const f of removeFields) {
+            delete json[f];
+            delete json[f.toLowerCase()];
+        }
+
+        const obj = MyDbCriteria.createUpdateSQL(json, "UPDATE_TIME");
+
+        const sql = SQL_UPDATE_ITME_BASE.replace(/{(\d)}/g, (m, n) => {
+            return n == 0 ? obj.keys : obj.placeholders;
+        });
+
+
+        if (!this._stmt_updateItem || this._stmt_updateItem !== sql) {
+            this._stmt_updateItem = this.db.prepare(sql);
+        }
+
+        this._stmt_updateItem.run(...obj.values, itemno);
+
+        return this.selectItem(itemno);
     }
 
     /**

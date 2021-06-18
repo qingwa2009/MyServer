@@ -26,10 +26,10 @@ module.exports = class IMyServerSetting {
      * @type{Object<string, Object<string, string>>}
      */
     extra_resp_headers = {
-        // "/welcome.html": {
-        //     /**主页禁止被iframe引用 */
-        //     "X-Frame-Options": "deny",
-        // }
+        "/welcome.html": {
+            /**主页禁止被iframe引用 */
+            "X-Frame-Options": "deny"
+        }
     }
 
 }

@@ -31,12 +31,10 @@ module.exports = class extends MyHttpResponse {
         const dml = {
             select: this.handleSelect,
             delete: this.handleDelete,
-            insert: this.handleInsert,
-            update: this.handleUpdate,
         }
         const p = Path.basename(req.url);
         if (!dml[p]) {
-            this.respError(req, 500, `'${p}' is not handle!`);
+            this.respError(req, 500, `'${p}' is not handle in Get Method!`);
             return;
         }
 
@@ -59,7 +57,25 @@ module.exports = class extends MyHttpResponse {
     }
 
     handleUpdate(/**@type{MyHttpRequest} */req) {
-        this.respError(req, 500, "还没写！");
+        this.handleJSON(req, json => {
+            const ITEM_NO = json.ITEM_NO;
+            if (!ITEM_NO) throw new Error("miss ITEM_NO!");
+            if (json.TYPE_NO !== ITEM_NO.substr(0, 4)) throw new Error("ITEM_NO and TYPE_NO doesn't match!");
+
+            //图片名称用物料编号+文件名称后缀
+            if (json["UPLOAD_IMG"]) {
+                json["UPLOAD_IMG"] = ITEM_NO + Path.extname(json["UPLOAD_IMG"]);
+            } else {
+                json["UPLOAD_IMG"] = "";
+            }
+            json["UPDATE_USER"] = "000000001";//req.Session.ID;
+
+            Application.dbMyPLM.updateItem(ITEM_NO, json).then(obj => {
+                this.respString(req, 200, JSON.stringify(obj));
+            }, error => {
+                this.respError(req, 500, error.message);
+            });
+        });
     }
 
     handleInsert(/**@type{MyHttpRequest} */req) {
@@ -67,8 +83,22 @@ module.exports = class extends MyHttpResponse {
     }
 
     handlePost(/**@type{MyHttpRequest} */req) {
-        if (this.respIfContLenNotInRange(req, 2, 8192)) return;
-        this.respError(req, 500, "还没写！");
+        if (this.respIfContLenNotInRange(req, 2, 65535)) return;
+
+        const dml = {
+            insert: this.handleInsert,
+            update: this.handleUpdate,
+        }
+        const p = Path.basename(req.url);
+        if (!dml[p]) {
+            this.respError(req, 500, `'${p}' is not handle in Post Method!`);
+            return;
+        }
+
+        dml[p].call(this, req);
+
+
+
         // this.handleDbCriteria(req, (criteria) => {
         //     const offset = parseInt(req.querys.get("offset") || 0);
         //     let c;
