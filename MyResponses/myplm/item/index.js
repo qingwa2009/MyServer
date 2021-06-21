@@ -8,4 +8,5 @@ module.exports = {
     '/myplm/item/update': require('./RespItemDML'),
     '/myplm/item/delete': require('./RespItemDML'),
     '/myplm/item/img': require('./RespItemImg'),
+    '/myplm/item/doc': require('./RespItemDoc'),
 }

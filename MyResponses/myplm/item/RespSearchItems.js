@@ -45,7 +45,7 @@ module.exports = class extends MyHttpResponse {
             Application.dbMyPLM.searchItems(c.where, c.orderby, c.values, offset ? offset : 0).then(mtd => {
                 this.respString(req, 200, mtd.toString());
             }, error => {
-                this.respError(req, 500, error.message);
+                this.respError(req, 500, error.stack);
             });
         });
     }

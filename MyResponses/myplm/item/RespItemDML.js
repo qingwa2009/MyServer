@@ -97,22 +97,5 @@ module.exports = class extends MyHttpResponse {
 
         dml[p].call(this, req);
 
-
-
-        // this.handleDbCriteria(req, (criteria) => {
-        //     const offset = parseInt(req.querys.get("offset") || 0);
-        //     let c;
-        //     try {
-        //         c = criteria.toCriteria();
-        //     } catch (error) {
-        //         this.respError(req, 400, error.message);
-        //         return;
-        //     }
-        //     Application.dbMyPLM.searchItems(c.where, c.orderby, c.values, offset ? offset : 0).then(mtd => {
-        //         this.respString(req, 200, mtd.toString());
-        //     }, error => {
-        //         this.respError(req, 500, error.message);
-        //     });
-        // });
     }
 }

@@ -17,7 +17,7 @@ class MySqliteWorker {
             //sqlite抛出的错误居然传不出去！！！重新抛
             const e = new Error(error.message);
             e.name = error.name;
-            e.stack = error.stack;
+            e.stack = `db.${method} is not exists!\n${error.stack}`;
             throw e;
         }
     }

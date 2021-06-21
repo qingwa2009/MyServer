@@ -1351,6 +1351,27 @@ async function testOracle() {
 
     //     // console.log(res);
     // });
+
+    // cnn.execute(`SELECT * FROM T_PDM_ITEM_DOC`).then(res => {
+    //     const cols = [];
+    //     for (const col of res.metaData) {
+    //         cols.push(col.name);
+    //     };
+    //     db.prepare(`create table if not exists T_PDM_ITEM_DOC (${cols.join(',')})`).run();
+
+    //     db.transaction((rs) => {
+    //         const stmt = db.prepare(`insert into T_PDM_ITEM_DOC values (${new Array(res.metaData.length).fill("?").join(",")})`);
+    //         for (const r of rs) {
+    //             for (let i = 0; i < r.length; i++) {
+    //                 if (r[i] instanceof Date) r[i] = Math.round(r[i].getTime() / 1000);
+    //             }
+    //             stmt.run(r);
+    //         }
+    //     }).immediate(res.rows)
+
+    // }).catch(error => {
+    //     console.error(error);
+    // })
 }
 
 // testMyDbCriteria();
@@ -1376,16 +1397,20 @@ function testMyDbCriteria() {
 }
 
 
-// testDbMyPLM();
+testDbMyPLM();
 function testDbMyPLM() {
     const DbMyPLM = require('./sample/DbMyPLM.js');
     const dbmyplm = new DbMyPLM();
-    const st = new Date().getTime();
-    for (let i = 0; i < 5; i++) {
-        let mtd = dbmyplm.searchItems("where t.RD_NO like 'AT%'", "order by 研发编号 DESC", [], i * 1, 10);
-        console.log(mtd.count, mtd.totalCount, mtd.data[0]);
-    }
-    console.log(`耗时:${new Date().getTime() - st}`);
+    // const st = new Date().getTime();
+    // for (let i = 0; i < 5; i++) {
+    //     let mtd = dbmyplm.searchItems("where t.RD_NO like 'AT%'", "order by 研发编号 DESC", [], i * 1, 10);
+    //     console.log(mtd.count, mtd.totalCount, mtd.data[0]);
+    // }
+    // console.log(`耗时:${new Date().getTime() - st}`);
+
+    let mtd = dbmyplm.selectItemDoc("1111001013");
+    console.log(mtd);
+
     dbmyplm.close();
 }
 
@@ -1491,7 +1516,7 @@ function testURL() {
     console.log(url.searchParams.getAll("我"));
 }
 
-testAAA()
+// testAAA()
 function testAAA() {
     const DbMyPLM = require("./sample/DbMyPLM");
     const db = new DbMyPLM(false);

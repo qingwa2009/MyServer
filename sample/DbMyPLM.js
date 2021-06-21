@@ -100,6 +100,17 @@ const SQL_SELECT_ITEM_LAST_UPDATETIME = `
     WHERE ITEM_NO = ?
 `;
 
+const SQL_SELECT_ITEM_DOC = `
+    WITH v_dt AS (SELECT * FROM T_PUB_CODE WHERE CODE='ITEM_DOC_TYPE')
+    SELECT t.IMG_ORDER 序号, t.ROWSTATE 状态, t.ITEM_NO 物料编号, t.UPLOAD_IMG 图档, t.REMARK 备注, dt.CODE_NAME 图档类别, t.ENG_ITEM_NO 工程图号, 
+           ifnull(stc.USERNAME, t.CREATE_USER) 创建人, t.CREATE_TIME 创建时间, ifnull(stu.USERNAME,t.UPDATE_USER) 更新人, t.UPDATE_TIME 更新时间
+    FROM T_PDM_ITEM_DOC t
+    LEFT JOIN v_dt dt ON dt.CODE_NO=t.IMG_TYPE
+    LEFT JOIN T_SYS_USER stc ON stc.USERNO=t.CREATE_USER
+    LEFT JOIN T_SYS_USER stu ON stu.USERNO=t.UPDATE_USER			
+    WHERE t.ITEM_NO=? ORDER BY t.CREATE_TIME DESC
+`;
+
 class DbMyPLM extends IMySqliteWorkerable {
 
     /**
@@ -233,6 +244,20 @@ class DbMyPLM extends IMySqliteWorkerable {
         }
 
         return this._stmt_selectItemLastUpdateTime.pluck().get(itemNo);
+    }
+
+    /**
+     * 获取物料图档
+     * @param {string} itemno 
+     * @returns {MyTableData|Promise<MyTableData>}
+     */
+    selectItemDoc(itemno) {
+        if (this.pool) return this.pool.asyncQuery("selectItemDoc", ...arguments).then(mtd => MyTableData.decorate(mtd));;
+
+        if (!this._stmt_selectItemDoc) {
+            this._stmt_selectItemDoc = this.db.prepare(SQL_SELECT_ITEM_DOC);
+        }
+        return MySqlite.getMyTableData(this._stmt_selectItemDoc, itemno);
     }
 
     /**

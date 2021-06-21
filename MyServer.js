@@ -257,8 +257,13 @@ module.exports = class MyServer extends IMyServer {
             resp.respError(req, 404);
             return;
         }
-        MyHttpResponse.create(RespClass, resp).response(req, this);
-        // console.log(resp);
+
+        try {
+            MyHttpResponse.create(RespClass, resp).response(req, this);
+        } catch (error) {
+            ERROR(error.stack);
+            resp.respError(req, 500, error.stack);
+        }
     }
 
     /**
