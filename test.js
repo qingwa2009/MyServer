@@ -1238,7 +1238,7 @@ async function testOracle() {
     const cnn = await oracledb.getConnection({
         connectString: "192.168.0.84:1521/plm.shianco.com.cn",
         password: "********",
-        user: '***',
+        user: '********',
     });
     const MySqlite = require("./MySqlite/MySqlite.js")
     const db = new MySqlite('./test/myplm.db');
@@ -1397,7 +1397,7 @@ function testMyDbCriteria() {
 }
 
 
-testDbMyPLM();
+// testDbMyPLM();
 function testDbMyPLM() {
     const DbMyPLM = require('./sample/DbMyPLM.js');
     const dbmyplm = new DbMyPLM();
@@ -1516,12 +1516,133 @@ function testURL() {
     console.log(url.searchParams.getAll("我"));
 }
 
-// testAAA()
-function testAAA() {
-    const DbMyPLM = require("./sample/DbMyPLM");
-    const db = new DbMyPLM(false);
-    console.log(db.db.prepare(`
-        SELECT * FROM T_PDM_ITEM
-        WHERE ITEM_NO=?
-    `).get("2241000048"));
+// testUDPReqDNS()
+function testUDPReqDNS() {
+    const dgram = require("dgram");
+
+    function getReqDNSBuf(/**@type{string} */hostname) {
+        const ss = hostname.split(".");
+        const n = hostname.length;
+        const buf = Buffer.allocUnsafe(hostname.length + 2 + 12 + 4);
+        //会话标识
+        buf[0] = 0x3e;
+        buf[1] = 0x3A;
+        //标志
+        buf[2] = 1;
+        buf[3] = 0;
+        //查询报文数量
+        buf[4] = 0;
+        buf[5] = 1;
+        //回答，授权和额外信息
+        buf[6] = 0;
+        buf[7] = 0;
+        buf[8] = 0;
+        buf[9] = 0;
+        buf[10] = 0;
+        buf[11] = 0;
+
+        let offset = 12;
+
+        for (const s of ss) {
+            const j = s.length;
+            buf[offset] = j;
+            offset++;
+            for (let k = 0; k < j; k++) {
+                buf[offset] = s.charCodeAt(k);
+                offset++;
+            }
+        }
+        buf[offset] = 0;
+
+        //类型
+        buf[offset + 1] = 0;
+        buf[offset + 2] = 1;
+        //类型
+        buf[offset + 3] = 0;
+        buf[offset + 4] = 1;
+
+        return buf;
+    }
+    const msg = getReqDNSBuf("3000128pc.shianco.com.cn");
+
+    const req = dgram.createSocket("udp4");
+    req.on("message", (msg, rinfo) => {
+        // console.log("req recv: ", rinfo, msg);
+        console.log("ip: ", `${msg[msg.byteLength - 4]}.${msg[msg.byteLength - 3]}.${msg[msg.byteLength - 2]}.${msg[msg.byteLength - 1]}`);
+    }).on("close", () => {
+        console.log("req closed!");
+    }).on("error", (err) => {
+        console.error("req error", err);
+    }).on("listening", () => {
+        console.log("req sending...");
+    })
+
+    req.send(msg, 53, "192.168.0.31");
+
+}
+
+testUDP();
+function testUDP() {
+    const dgram = require("dgram");
+
+    const ports = [10000, 10001, 10002];
+    const groupIP = "224.1.1.1";//224.0.0.1~239.255.255.254 组播地址前4位1110固定，后28位组播地址标识
+
+    const p0 = dgram.createSocket("udp4");
+    p0.bind(ports[0]);
+    p0.on("listening", () => {
+        console.log(`p0 start listening(${p0.address().address}:${p0.address().port})...`);
+        p0.addMembership(groupIP);
+        // p0.setBroadcast(true);
+        // p0.setMulticastTTL(5)
+    }).on("message", (msg, rinfo) => {
+        console.log(`p0 recv from : ${rinfo.address}:${rinfo.port}`, msg.toString());
+        p0.send("hi i am p0", rinfo.port, rinfo.address, () => {
+            // p0.close();
+        });
+    }).on("error", (err) => {
+        console.error(err);
+    }).on("close", () => {
+        console.log("p0 closed!");
+    });
+
+
+
+
+    const p1 = dgram.createSocket("udp4");
+    p1.bind(ports[0], "192.168.6.30");
+    p1.on("listening", () => {
+        console.log(`p1 start listening(${p1.address().address}:${p1.address().port})...`);
+        p1.addMembership(groupIP);
+        // p1.setMulticastLoopback(false);
+        // p0.setBroadcast(true);
+        // p0.setMulticastTTL(5)
+    }).on("message", (msg, rinfo) => {
+        console.log(`p1 recv from : ${rinfo.address}:${rinfo.port}`, msg.toString());
+        // p1.close();
+    }).on("error", (err) => {
+        console.error(err);
+    }).on("close", () => {
+        console.log("p1 closed!");
+    });
+    p1.send("hi i am p1, i am sending in group!", ports[0], groupIP);
+
+
+
+    const p2 = dgram.createSocket("udp4");
+    p2.bind(ports[2]);
+    p2.on("listening", () => {
+        console.log(`p2 start listening(${p2.address().address}:${p2.address().port})...`);
+        // p2.setBroadcast(true);
+    }).on("message", (msg, rinfo) => {
+        console.log(`p2 recv from : ${rinfo.address}:${rinfo.port}`, msg.toString());
+        // p2.close();
+    }).on("error", (err) => {
+        console.error(err);
+    }).on("close", () => {
+        console.log("p2 closed!");
+    });
+    p2.send(["hi ", "i am p2, i am not in group, but i can send to group!"], ports[0], groupIP);
+    p2.send(["hi ", "i am p2 broadcast!"], ports[0], "192.168.6.255");
+
 }
