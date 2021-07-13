@@ -12,7 +12,7 @@ module.exports = class extends MyHttpResponse {
      * @param {IMyServer} server
      */
     response(req, server) {
-        // itemImgFolder = Path.resolve(server.websiteSetting.root, "./img/itemImgs");
+        // itemImgFolder = Path.resolve(server.websiteSetting.root, "../itemImgs");
         try {
             switch (req.method) {
                 case HttpConst.METHOD.Get:
