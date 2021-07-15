@@ -1,5 +1,6 @@
 'use strict';
 const Path = require('path');
+const FS = require("fs");
 const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../../MyHttp');
 const Application = require("../../Application");
 const { LOG, WARN, ERROR } = require('../../MyUtil');
@@ -19,16 +20,28 @@ module.exports = class extends MyHttpResponse {
             return;
         }
 
-        let path;
+        let path = "";
+        const suffix = '.temp';
         try {
             fileName = decodeURI(fileName);
-            fileName = fileName.replace(/\s/ig, " ");//所有空白字符替换成空格
+            fileName = fileName.replace(/\s/ig, " ") + suffix;//所有空白字符替换成空格
             path = Path.join(server.websiteSetting.root, Application.xb_export_folder, fileName);
         } catch (error) {
             this.respError(req, 500, error.message);
             return;
         }
-        this.handleUpload(req, path);
+        this.handleUpload(req, path, () => {
+            return new Promise((res, rej) => {
+                FS.rename(path, path.substr(0, path.length - suffix.length), (error) => {
+                    if (error) {
+                        Application.fm.deleteFile(path).catch(err => { });
+                        rej(error);
+                    } else {
+                        res();
+                    }
+                })
+            });
+        });
     }
 
 }

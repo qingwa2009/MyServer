@@ -232,8 +232,10 @@ class MyHttpResponse extends Http.ServerResponse {
      * 自动处理上传文件的请求
      * @param {MyHttpRequest} req 
      * @param {string} path 
+     * @param {()=>Promise<void>} callback 写入完成时调用，需要返回Promise，
+     * Promise的状态将影响响应的是200还是500
      */
-    handleUpload(req, path) {
+    handleUpload(req, path, callback = undefined) {
         /**@type {MyFileManager.MyFileWriteStream} */
         let _ws = null;
         Application.fm.create(path).then(
@@ -253,7 +255,15 @@ class MyHttpResponse extends Http.ServerResponse {
                         }
                         return;
                     }
-                    this.respString(req, 200);
+                    if (callback) {
+                        callback().then(() => {
+                            this.respString(req, 200);
+                        }, err => {
+                            this.respError(req, 500, err.toString());
+                        });
+                    } else {
+                        this.respString(req, 200);
+                    }
                 });
             },
             err => {
