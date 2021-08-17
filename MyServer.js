@@ -45,6 +45,7 @@ module.exports = class MyServer extends IMyServer {
 
         this.port = this.isHttps ? this.websiteSetting.https_port : this.websiteSetting.http_port;
         this.ip = this.websiteSetting.ip;
+
         if (!this.ip) {
             const ips = MyUtil.getLocalIP4();
             if (ips.length > 0) {

@@ -7,6 +7,8 @@ const MyServer = require('./MyServer');
 const { IMyServerSetting } = require('./MyHttp');
 const Application = require('./Application');
 
+const rootPath = process.argv[2];
+
 let httpsOptions = null;
 try {
     httpsOptions = {
@@ -18,6 +20,14 @@ try {
 }
 
 Application.loadWebsiteSetting();
+
+
+if (rootPath && FS.existsSync(rootPath)) {
+    Application.websiteSetting.root = rootPath;
+}
+
+console.log("website root: ", Application.websiteSetting.root);
+
 
 if (Application.websiteSetting.https_port && httpsOptions) {
     const httpsServer = new MyServer(Application.websiteSetting, httpsOptions);
