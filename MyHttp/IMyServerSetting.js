@@ -1,7 +1,7 @@
 'use strict';
 module.exports = class IMyServerSetting {
     /**网站根目录 */
-    root = "C:/Users/linjunbin/Desktop/htmlTest/MyWebsite";
+    root = "C:/Users/linjunbin/Desktop/htmlTest/MyWebsiteProjects/MyWebsite";
     /**上传文件目录，不要位于root的子目录，防止root里面的文件被覆盖 */
     upload_folder = "C:/Users/linjunbin/Desktop/htmlTest/上传下载";
     /**网站主页面 */
