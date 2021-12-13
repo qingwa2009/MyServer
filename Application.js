@@ -16,6 +16,8 @@ class Application {
     static xb_export_folder = "../upload/";
     /**@type{DbMyPLM} */
     static dbMyPLM;
+    /**@type{Map<string,number>} */
+    static someoneHackingPath = {};
 
     static _isDbInited = false;
     static initDb() {
@@ -57,6 +59,18 @@ class Application {
         if (need2save) {
             FS.writeFileSync(settingPath, JSON.stringify(Application.websiteSetting));
             console.log('websiteSetting saved!');
+        }
+    }
+
+    /**
+    * @param {string} ip 
+    * @param {MyUtil.ExceptionPathNoInFolder} err 
+    */
+    static addToHackingPath(ip, err) {
+        if (Application.someoneHackingPath[ip] === undefined) {
+            Application.someoneHackingPath[ip] = 1;
+        } else {
+            Application.someoneHackingPath[ip]++;
         }
     }
 

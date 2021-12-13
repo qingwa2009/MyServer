@@ -1,7 +1,9 @@
 'use strict';
 const FS = require('fs');
 const os = require('os');
+const Path = require("path");
 const IMyWebLogger = require('./IMyWebLogger');
+const ExceptionPathNoInFolder = require("./ExceptionPathNoInFolder");
 
 let ENABLE_LOG = false;
 let ENABLE_WARN = true;
@@ -132,4 +134,28 @@ function getLocalIP4() {
         }
     }
     return ips;
+}
+
+exports.isPathInFolder = isPathInFolder;
+function isPathInFolder(path, folder) {
+    var p0 = Path.resolve(path) + Path.sep;
+    var p1 = Path.resolve(folder) + Path.sep;
+
+    return p0.startsWith(p1);
+}
+
+exports.joinPath = joinPath;
+/**
+ * @param {string} folder 
+ * @param {string} filename 
+ * @param {boolean} mustInFolder 
+ * keepInFolder为true：如果Path.join文件并不在该目录则throw ExceptionPathNoInFolder，默认true
+ * @throws {ExceptionPathNoInFolder}
+ */
+function joinPath(folder, filename, mustInFolder = true) {
+    let path = Path.resolve(Path.join(folder, filename));
+    if (mustInFolder && !isPathInFolder(path, folder)) {
+        throw new ExceptionPathNoInFolder(`'${path}' not in '${folder}'`);
+    }
+    return path;
 }

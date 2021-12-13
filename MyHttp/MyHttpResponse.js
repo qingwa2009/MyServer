@@ -7,7 +7,8 @@ const HttpConst = require('./HttpConst');
 const Application = require("../Application");
 const MyHttpRequest = require('./MyHttpRequest');
 const IMyServer = require('./IMyServer');
-const { LOG, WARN, ERROR, MyFileManager } = require('../MyUtil');
+const MyUtil = require('../MyUtil');
+const { LOG, WARN, ERROR, MyFileManager, ExceptionPathNoInFolder } = require('../MyUtil');
 const { MyDbCriteria, MyTableData } = require('../MySqlite');
 
 //==========MyHttpResponse==========
@@ -229,6 +230,26 @@ class MyHttpResponse extends Http.ServerResponse {
 
 
     /**
+     * 合并folder/filename，并检查生成的路径是否在folder里面
+     * 如果不在就自动响应错误并返回false，否则返回合并后的路径
+     * @param {MyHttpRequest} req 
+     * @param {string} folder 
+     * @param {string} filename 
+     * @returns {string}
+     */
+    joinOrRespIfPathNotInFolder(req, folder, filename) {
+        try {
+            let path = MyUtil.joinPath(folder, filename);
+            return path;
+        } catch (error) {
+            Application.addToHackingPath(req.socket.address, error);
+            this.respError(req, 400, "The path is not accessible: " + filename);
+            return false;
+        }
+    }
+
+
+    /**
      * 自动处理上传文件的请求
      * @param {MyHttpRequest} req 
      * @param {string} path 
@@ -343,6 +364,7 @@ class MyHttpResponse extends Http.ServerResponse {
             }
         })
     }
+
 
 
     static _decorate() {

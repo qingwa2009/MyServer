@@ -7,9 +7,8 @@ const Assert = require('assert');
 
 
 const MyUtil = require('./MyUtil');
-const { LOG, WARN, ERROR } = MyUtil;
+const { LOG, WARN, ERROR, MyFileManager } = MyUtil;
 const Application = require('./Application');
-const { MyFileManager } = MyUtil;
 
 const { MySession, IMyServer, IMyServerSetting, HttpConst, MyHttpRequest, MyHttpResponse, MySocket, MyWebSocket, IMyWebSocketHandler } = require('./MyHttp');
 const RESP_CLASS_LIST = require('./MyResponses');
@@ -55,6 +54,7 @@ module.exports = class MyServer extends IMyServer {
             }
         }
         this.server.listen(this.port, this.ip);
+
     }
 
     /**所有连接都关闭时才会触发close事件 */
@@ -160,7 +160,9 @@ module.exports = class MyServer extends IMyServer {
                     resp.respRedirect(req, this.websiteSetting.main_page);
                     break;
                 default:
-                    let fPath = getResourcePath(this.websiteSetting.root, url);
+                    let fPath = resp.joinOrRespIfPathNotInFolder(req, this.websiteSetting.root, url);
+                    if (!fPath) return;
+
                     this.RespStaticRes(req, resp, fPath).catch((err) => this.RespOther(req, resp));
                     break;
             }
@@ -288,17 +290,6 @@ module.exports = class MyServer extends IMyServer {
         });
     }
 }
-
-
-/**
- * @param {String} root 根目录
- * @param {String} url 文件路径
- */
-function getResourcePath(root, url) {
-    return Path.join(root, url);
-}
-
-
 
 
 
