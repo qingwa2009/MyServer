@@ -6,6 +6,7 @@ const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHt
 const { MyFileManager, formatDate } = require('../MyUtil');
 
 const { LOG, WARN, ERROR } = require('../MyUtil');
+const MyUtil = require('../MyUtil');
 
 module.exports = class extends MyHttpResponse {
     /**
@@ -21,8 +22,11 @@ module.exports = class extends MyHttpResponse {
                 this.respError(req, 400, `header must contain: file-name string!`);
                 return;
             }
+
             fileName = decodeURI(fileName);
-            const path = Path.join(server.websiteSetting.upload_folder, fileName);
+            let path = this.joinOrRespIfPathNotInFolder(req, server.websiteSetting.upload_folder, fileName);
+            if (!path) return;
+
             this.handleUpload(req, path);
             return;
         }
@@ -31,7 +35,9 @@ module.exports = class extends MyHttpResponse {
         if (this.respIfQueryIsInvalid(req, qs)) return;
 
         if (qs.del) {
-            const path = Path.join(server.websiteSetting.upload_folder, qs.del);
+            const path = this.joinOrRespIfPathNotInFolder(req, server.websiteSetting.upload_folder, qs.del);
+            if (!path) return;
+
             this.handleDeleteFile(req, path);
             return;
         }
@@ -40,7 +46,9 @@ module.exports = class extends MyHttpResponse {
             this.handleGetFileList(req, server.websiteSetting.upload_folder);
             return;
         } else {
-            const path = Path.join(server.websiteSetting.upload_folder, qs.file);
+            const path = this.joinOrRespIfPathNotInFolder(req, server.websiteSetting.upload_folder, qs.file);
+            if (!path) return;
+
             this.handleGetFile(req, path);
             return;
         }

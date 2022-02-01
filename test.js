@@ -13,12 +13,25 @@ const querystring = require('querystring');
 
 MyUtil.LOG("-----------------test-----------------");
 
-// testPath();
+testPath();
 function testPath() {
     let p = Path.win32.join("c:/", "/abc/");
     console.log(p);
-    p = Path.win32.join("c:/def", "../abc");
-    console.log(p);
+    p = Path.join("c:/def", "/../abc");
+    console.log(p + Path.sep);
+
+    try {
+        console.log(MyUtil.joinPath("c:/def", "/../abc"));
+        console.log(MyUtil.joinPath("c:/def/abc", "/abcd"));
+    } catch (error) {
+        console.log(error instanceof MyUtil.ExceptionPathNoInFolder);
+    }
+
+
+
+    console.log(MyUtil.isPathInFolder("c:/def/abc/../abcd\\def", "c:\\def\\abc"));
+
+    console.log(MyUtil.isPathInFolder("c:/def/abc/../abc\\def", "c:\\def\\abc"));
 }
 
 // testGetFileState();
@@ -1581,7 +1594,7 @@ function testUDPReqDNS() {
 
 }
 
-testUDP();
+// testUDP();
 function testUDP() {
     const dgram = require("dgram");
 

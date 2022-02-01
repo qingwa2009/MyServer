@@ -3,7 +3,7 @@ const Path = require('path');
 const FS = require("fs");
 const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../../MyHttp');
 const Application = require("../../Application");
-const { LOG, WARN, ERROR } = require('../../MyUtil');
+const { LOG, WARN, ERROR, MyFileManager } = require('../../MyUtil');
 
 module.exports = class extends MyHttpResponse {
     /**
@@ -25,7 +25,9 @@ module.exports = class extends MyHttpResponse {
         try {
             fileName = decodeURI(fileName);
             fileName = fileName.replace(/\s/ig, " ") + suffix;//所有空白字符替换成空格
-            path = Path.join(server.websiteSetting.root, Application.xb_export_folder, fileName);
+            path = this.joinOrRespIfPathNotInFolder(req, Path.join(server.websiteSetting.root, Application.xb_export_folder), fileName);
+            if (!path) return;
+
         } catch (error) {
             this.respError(req, 500, error.message);
             return;

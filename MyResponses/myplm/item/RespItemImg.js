@@ -30,19 +30,20 @@ module.exports = class extends MyHttpResponse {
         }
     }
 
-    getImgPathOrRespError(imgName) {
+    getImgPathOrRespError(req, imgName) {
         if (!imgName) {
             this.respError(req, 400, `query type error：img must not be empty string`);
             return false;
         }
-        return Path.join(itemImgFolder, imgName.substr(0, 1), imgName.substr(0, 3), imgName);
+        const filename = Path.join(imgName.substr(0, 1), imgName.substr(0, 3), imgName);
+        return this.joinOrRespIfPathNotInFolder(req, itemImgFolder, filename);
     }
 
     handleGet(/**@type{MyHttpRequest} */req) {
         const qs = { img: "" };
         if (this.respIfQueryIsInvalid(req, qs)) return;
 
-        let path = this.getImgPathOrRespError(qs.img);
+        let path = this.getImgPathOrRespError(req, qs.img);
         if (path) this.respFile(req, path, 'image/png');
     }
 
@@ -58,7 +59,7 @@ module.exports = class extends MyHttpResponse {
 
         //图片名称用物料编号+文件名称后缀
         let path = qs.itemno + Path.extname(qs.img);
-        path = this.getImgPathOrRespError(path);
+        path = this.getImgPathOrRespError(req, path);
 
         if (path) {
             Application.dbMyPLM.updateItemLastUpdateTime(qs.itemno).then(b => {
