@@ -363,7 +363,7 @@ MyFileManager.MyFileHandle = class MyFileHandle {
     /**
      * @param {Stream.Writable} destination 
      * @returns {Promise<void>}
-     * 传输接受时请手动关闭destination
+     * 传输结束时请手动关闭destination
      * 如果传输期间出现：source.error、destination.close、destination.error的事件，就会引发错误
      */
     pipe(destination, start = 0, end = Infinity) {

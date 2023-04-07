@@ -104,8 +104,9 @@ class MyHttpResponse extends Http.ServerResponse {
      * @param {MyHttpRequest} req 
      * @param {string} path
      * @param {string} customContentType 自定义content-type 对于普通文件请设置为\*\/*防止被浏览器作为可执行文件运行;
+     * @param {Date} ifRange 断点续传必须传入该字段值，值必须等于请求的文件修改时间，req里面的range才会生效
      */
-    respFile(req, path, customContentType = undefined) {
+    respFile(req, path, customContentType = undefined, ifRange=undefined) {
         FS.stat(path, (err, stat) => {
             if (err) {
                 if (err.code === 'ENOENT')
@@ -118,7 +119,25 @@ class MyHttpResponse extends Http.ServerResponse {
                 this.respError(req, 400, `the request file is not a file!`);
                 return;
             }
-            this.respFile_(req, path, stat, customContentType);
+            let start=0,end=Infinity;
+            if(ifRange){
+                if(parseInt(stat.mtime.getTime() / 1000) * 1000 === new Date(ifRange).getTime()){
+                    const range=req.headers[HttpConst.HEADER["Range"]];
+                    const match = /bytes=(\d+)-(\d*)$/.exec(range);//仅支持单个片段续传
+                    if(!match){
+                        this.setHeader(HttpConst.HEADER["Accept-Ranges"], "bytes");
+                        this.respError(req, 416);//Raneg Not Satisfiable
+                        return;
+                    }
+                    if(match[1]){
+                        start=parseInt(match[1]);
+                    }
+                    if(match[2]){
+                        end=parseInt(match[2]);
+                    }
+                }                
+            }
+            this.respFile_(req, path, stat, customContentType, start, end);
         });
     }
 
@@ -127,8 +146,10 @@ class MyHttpResponse extends Http.ServerResponse {
      * @param {string} path
      * @param {FS.Stats} stat path对应的fs.stats，必须确保stat.isFile()为true才行
      * @param {string} customContentType 自定义content-type 对于普通文件请设置为\*\/*防止被浏览器作为可执行文件运行;
+     * @param {number} start default 0
+     * @param {number} end  default Infinity
      */
-    async respFile_(req, path, stat, customContentType = undefined) {
+    async respFile_(req, path, stat, customContentType = undefined, start=0, end=Infinity) {
         Assert(stat.isFile(), 'resp file is not a file: ' + path);
         const t = customContentType || (HttpConst.DOC_CONT_TYPE[Path.extname(path).toLocaleLowerCase()] || '*/*');
 
@@ -140,11 +161,34 @@ class MyHttpResponse extends Http.ServerResponse {
             return;
         }
 
+        let contentLen=stat.size;
+        //断点续传
+        if(start!==0 || end !==Infinity){
+            let _end = end===Infinity ? contentLen-1 : end;
+            
+            this.setHeader(HttpConst.HEADER["Accept-Ranges"], "bytes");
+            
+            if(_end>=contentLen){
+                this.setHeader(HttpConst.HEADER["Content-Range"], `*/${contentLen}`);    
+                this.respError(req, 416);//Raneg Not Satisfiable
+                return;
+            }
+            
+            this.setHeader(HttpConst.HEADER["Content-Range"], `bytes ${start}-${_end}/${contentLen}`);
+
+            contentLen=_end-start+1;//修正续传长度
+            this.statusCode=206;
+            this.statusMessage = Http.STATUS_CODES[this.statusCode];
+        }
+
         this._addExtraRespHeaders(req);
         this.setHeader(HttpConst.HEADER["Content-Type"], t);
-        this.setHeader(HttpConst.HEADER["Content-Length"], stat.size);
-        WARN(this.toString(), `piping file ${path}, total length: ${stat.size}bytes`);
-        fh.pipe(this).then(
+        this.setHeader(HttpConst.HEADER["Content-Length"], contentLen);
+
+        
+
+        WARN(this.toString(), `piping file ${path}, ${start}-${end} total length: ${contentLen}bytes`);
+        fh.pipe(this, start, end).then(
             () => {
                 this.end();
                 // req.socket.destroy();

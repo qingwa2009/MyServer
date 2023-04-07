@@ -100,7 +100,8 @@ module.exports = class extends MyHttpResponse {
      * @param {string} path 
      */
     handleGetFile(req, path) {
-        this.respFile(req, path, "*/*");
+        const ifRange= req.headers[HttpConst.HEADER["If-Range"]];        
+        this.respFile(req, path, "*/*",  ifRange);
     }
 }
 
