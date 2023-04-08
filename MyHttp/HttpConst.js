@@ -16,6 +16,10 @@ exports.HEADER = {
     "no-cache": "no-cache",
     "Last-Modified": "last-modified",
     "If-modified-since": "if-modified-since",
+    "Range":"range",//请求的文件字节范围
+    "Accept-Ranges":"accept-ranges",//值bytes或者none
+    "Content-Range": "content-range",//响应这个206 partial content时需要带上
+    "If-Range":"if-range",//满足If-Range时 Range才有效
     "Set-Cookie": "set-cookie",
     "Cookie": "cookie",
     "Referer": "referer",
