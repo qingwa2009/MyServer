@@ -104,7 +104,7 @@ class MyHttpResponse extends Http.ServerResponse {
      * @param {MyHttpRequest} req 
      * @param {string} path
      * @param {string} customContentType 自定义content-type 对于普通文件请设置为\*\/*防止被浏览器作为可执行文件运行;
-     * @param {Date} ifRange 断点续传必须传入该字段值，值必须等于请求的文件修改时间，req里面的range才会生效
+     * @param {Date} ifRange 断点续传如果传入该字段值，则值必须等于请求的文件修改时间，req里面的range才会生效
      */
     respFile(req, path, customContentType = undefined, ifRange=undefined) {
         FS.stat(path, (err, stat) => {
@@ -120,22 +120,20 @@ class MyHttpResponse extends Http.ServerResponse {
                 return;
             }
             let start=0,end=Infinity;
-            if(ifRange){
-                if(parseInt(stat.mtime.getTime() / 1000) * 1000 === new Date(ifRange).getTime()){
-                    const range=req.headers[HttpConst.HEADER["Range"]];
-                    const match = /bytes=(\d+)-(\d*)$/.exec(range);//仅支持单个片段续传
-                    if(!match){
-                        this.setHeader(HttpConst.HEADER["Accept-Ranges"], "bytes");
-                        this.respError(req, 416);//Raneg Not Satisfiable
-                        return;
-                    }
-                    if(match[1]){
-                        start=parseInt(match[1]);
-                    }
-                    if(match[2]){
-                        end=parseInt(match[2]);
-                    }
-                }                
+            if((ifRange && parseInt(stat.mtime.getTime() / 1000) * 1000 === new Date(ifRange).getTime()) || !ifRange){
+                const range=req.headers[HttpConst.HEADER["Range"]];
+                const match = /bytes=(\d+)-(\d*)$/.exec(range);//仅支持单个片段续传
+                if(!match){
+                    this.setHeader(HttpConst.HEADER["Accept-Ranges"], "bytes");
+                    this.respError(req, 416);//Raneg Not Satisfiable
+                    return;
+                }
+                if(match[1]){
+                    start=parseInt(match[1]);
+                }
+                if(match[2]){
+                    end=parseInt(match[2]);
+                }
             }
             this.respFile_(req, path, stat, customContentType, start, end);
         });
@@ -161,12 +159,13 @@ class MyHttpResponse extends Http.ServerResponse {
             return;
         }
 
+        this.setHeader(HttpConst.HEADER["Accept-Ranges"], "bytes");
+        
         let contentLen=stat.size;
         //断点续传
         if(start!==0 || end !==Infinity){
             let _end = end===Infinity ? contentLen-1 : end;
             
-            this.setHeader(HttpConst.HEADER["Accept-Ranges"], "bytes");
             
             if(_end>=contentLen){
                 this.setHeader(HttpConst.HEADER["Content-Range"], `*/${contentLen}`);    
