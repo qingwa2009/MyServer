@@ -120,20 +120,22 @@ class MyHttpResponse extends Http.ServerResponse {
                 return;
             }
             let start=0,end=Infinity;
-            if((ifRange && parseInt(stat.mtime.getTime() / 1000) * 1000 === new Date(ifRange).getTime()) || !ifRange){
-                const range=req.headers[HttpConst.HEADER["Range"]];
-                const match = /bytes=(\d+)-(\d*)$/.exec(range);//仅支持单个片段续传
-                if(!match){
-                    this.setHeader(HttpConst.HEADER["Accept-Ranges"], "bytes");
-                    this.respError(req, 416);//Raneg Not Satisfiable
-                    return;
-                }
-                if(match[1]){
-                    start=parseInt(match[1]);
-                }
-                if(match[2]){
-                    end=parseInt(match[2]);
-                }
+            const range=req.headers[HttpConst.HEADER["Range"]];
+            if(range){
+                if((ifRange && parseInt(stat.mtime.getTime() / 1000) * 1000 === new Date(ifRange).getTime()) || !ifRange){                
+                    const match = /bytes=(\d+)-(\d*)$/.exec(range);//仅支持单个片段续传
+                    if(!match){
+                        this.setHeader(HttpConst.HEADER["Accept-Ranges"], "bytes");
+                        this.respError(req, 416);//Raneg Not Satisfiable
+                        return;
+                    }
+                    if(match[1]){
+                        start=parseInt(match[1]);
+                    }
+                    if(match[2]){
+                        end=parseInt(match[2]);
+                    }
+                }                
             }
             this.respFile_(req, path, stat, customContentType, start, end);
         });
