@@ -9,7 +9,7 @@ const { LOG, WARN, ERROR } = require('../MyUtil');
 
 //==========MySocket==========
 class MySocket extends Net.Socket {
-
+    id="";
     constructor() {
         Assert(false, "please use decorate!");
     }

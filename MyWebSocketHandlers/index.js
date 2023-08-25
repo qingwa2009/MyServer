@@ -1,11 +1,13 @@
 'use strict';
 const { IMyWebSocketHandler } = require('../MyHttp')
 module.exports = {
+    //全小写
     '/sample': require('./WSSample'),
     '/weblog': require('./WSLogger'),
     '/multiplayer': require('./WSMultiplayer'),
     '/status': require('./WSServerStatus'),
     '/exportxb': require('../MyResponses/exportxb/WSExportxb'),
+    '/webrtcsignalingserver': require('../MyResponses/WebRTCTest/WSWebRTCSignalingServer'),
 
 
 
