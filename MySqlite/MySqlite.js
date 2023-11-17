@@ -1,7 +1,7 @@
 const Assert = require("assert");
 const { ERROR, WARN, LOG } = require("../MyUtil");
 const Database = require("better-sqlite3");
-const MyTableData = require("./MyTableData");
+const MyTableData = require("../MyDatabase/MyTableData");
 // SQLite3	|   JavaScript
 // NULL	    |   null
 // REAL	    |   number

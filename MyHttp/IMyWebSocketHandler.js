@@ -4,16 +4,24 @@ const MyWebSocket = require('./MyWebSocket');
 const MyHttpRequest = require('./MyHttpRequest');
 const MySocket = require('./MySocket');
 const IMyServer = require('./IMyServer');
-const { LOG, WARN, ERROR } = require('../MyUtil');
+const { LOG, WARN, ERROR, uuidv4 } = require('../MyUtil');
 module.exports = class IMyWebSocketHandler {
     /**@type {Map<MyWebSocket , MyWebSocket>} */
     _websockets = new Map();
-
+    createID(){
+        let id="";
+        do{
+            id = uuidv4();
+        }while(this._websockets.has(id));
+        return id;
+    }
     /**
      * @param {MyWebSocket} ws 
      */
-    add(ws) {
-        this._websockets.set(ws, ws);
+    add(ws) {        
+        const id = this.createID();
+        ws.id=id;
+        this._websockets.set(id, ws);
         // ws.setKeepAlive(true);//打开KeepAlive
         ws.setTimeout(0);//不设置超时
         ws.once('close', hasErr => this.remove(ws));
@@ -26,7 +34,13 @@ module.exports = class IMyWebSocketHandler {
      * @param {MyWebSocket} ws 
      */
     remove(ws) {
-        this._websockets.delete(ws);
+        this._websockets.delete(ws.id);
+    }
+    /**
+     * @param {string} id 
+     */
+    removeByID(id){
+        this._websockets.delete(id);
     }
 
     removeAll() {
