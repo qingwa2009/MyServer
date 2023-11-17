@@ -9,7 +9,7 @@ const MyHttpRequest = require('./MyHttpRequest');
 const IMyServer = require('./IMyServer');
 const MyUtil = require('../MyUtil');
 const { LOG, WARN, ERROR, MyFileManager, ExceptionPathNoInFolder } = require('../MyUtil');
-const { MyDbCriteria, MyTableData } = require('../MySqlite');
+const { MyDbCriteria, MyTableData } = require('../MyDatabase');
 
 //==========MyHttpResponse==========
 class MyHttpResponse extends Http.ServerResponse {

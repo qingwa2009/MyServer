@@ -1,8 +1,18 @@
 const Path = require('path');
 const FS = require('fs');
 const MyUtil = require('./MyUtil');
-const DbSetting = require("./sample/DbSetting");
-const DbMyPLM = require("./sample/DbMyPLM");
+
+let DbSetting=null;
+let DbMyPLM=null;
+try {
+    require.resolve('better-sqlite3');
+    DbSetting = require("./sample/DbSetting");
+    DbMyPLM = require("./sample/DbMyPLM");
+} catch (error) {
+    console.error("====================================================");
+    console.error(error);
+    console.error("====================================================");
+}
 
 const IMyServerSetting = require("./MyHttp/IMyServerSetting");
 
@@ -22,18 +32,29 @@ class Application {
     static _isDbInited = false;
     static initDb() {
         if (Application._isDbInited) return;
-        Application._isDbInited = true;
-        Application.dbSetting = new DbSetting(true);
-        Application.dbMyPLM = new DbMyPLM(true);
+        try {
+            Application.dbSetting = new DbSetting(true);
+            Application.dbMyPLM = new DbMyPLM(true);            
+            Application._isDbInited = true;
+        } catch (error) {
+            console.error("====================================================");
+            console.error(error);
+            console.error("====================================================");
+        }
     }
 
     static releaseAllResources() {
-        Application._isDbInited = false;
         Application.fm.releaseAllFileReading();
-        return Promise.all(
-            Application.dbSetting.close(),
-            Application.dbMyPLM.close()
-        ).catch(() => { });
+        if(Application._isDbInited){
+            Application._isDbInited = false;
+            return Promise.all(
+                Application.dbSetting.close(),
+                Application.dbMyPLM.close()
+            ).catch(() => { });
+        }else{
+            return Promise.resolve();
+        }
+        
     }
 
     static loadWebsiteSetting() {

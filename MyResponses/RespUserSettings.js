@@ -1,7 +1,7 @@
 'use strict';
 const { MyHttpRequest, MyHttpResponse, IMyServer, HttpConst } = require('../MyHttp');
 const Application = require("../Application");
-const { MyTableData } = require("../MySqlite");
+const { MyTableData } = require("../MyDatabase");
 const { LOG, WARN, ERROR } = require('../MyUtil');
 
 module.exports = class extends MyHttpResponse {
