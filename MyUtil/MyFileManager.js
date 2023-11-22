@@ -52,13 +52,13 @@ class MyFileManager {
     open(path) {
         const uPath = MyFileManager.ignoreCasePath(path);
         if (this._writingStreams.has(uPath)) {
-            ERROR(`file open ${uPath} failed: file is writing!`);
+            ERROR(`file open ${path} failed: file is writing!`);
             return Promise.reject(new Error('file is writing!'));
         }
 
         if (!this._readingfds.has(uPath)) {
             const p = new Promise((res, rej) => {
-                FS.open(uPath, FS.constants.O_RDONLY, (err, fd) => {
+                FS.open(path, FS.constants.O_RDONLY, (err, fd) => {
                     if (err) {
                         ERROR('file open failed: ', err.stack);
                         this._readingfds.delete(uPath);
@@ -88,7 +88,7 @@ class MyFileManager {
         }
 
         const p =
-            this.closeFileReading(uPath, false).then(
+            this.closeFileReading(path, false).then(
                 () => {
                     //建文件夹
                     const dirname = Path.dirname(path);
