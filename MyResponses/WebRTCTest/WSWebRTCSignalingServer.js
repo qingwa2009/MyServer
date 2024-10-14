@@ -5,7 +5,10 @@ const { IMyWebSocketHandler, MyWebSocket, MyHttpRequest, MySocket } = require('.
 const Application = require("../../Application");
 const { LOG, WARN, ERROR } = require('../../MyUtil');
 
-const TYPES_MYID='myid';
+const SIG_TYPE_ERROR=0;
+const SIG_TYPE_ID = 1;
+const SIG_TYPE_DESCRIPTION=2;
+const SIG_TYPE_CANDIDATE=3;
 const TYPES_USERLIST='userlist';
 const TYPES_ERROR='error';
     
@@ -20,7 +23,6 @@ class WSWebRTCSignalingServer extends IMyWebSocketHandler {
     addUser(id, name){       
         const user={id,name}; 
         this.users.set(id,user);
-        
     }
 
     /**    
@@ -36,7 +38,11 @@ class WSWebRTCSignalingServer extends IMyWebSocketHandler {
     }
 
     notifyUserlist(){
-        const str=JSON.stringify({type:TYPES_USERLIST,data:this.getUserList()});
+        const msg={
+            type:TYPES_USERLIST,
+            data:this.getUserList()
+        };
+        const str=JSON.stringify(msg);
         for (const ws of this.eachWebSocket()) {
             ws.send(str);
         }
@@ -57,6 +63,12 @@ class WSWebRTCSignalingServer extends IMyWebSocketHandler {
         // ws.maxFrameLength = 125;
         const name="";
         this.addUser(ws.id, name);
+        const msg={
+            type:SIG_TYPE_ID,
+            data:ws.id
+        };
+        ws.send(JSON.stringify(msg));
+        this.notifyUserlist();
     }
 
     /**
@@ -68,39 +80,27 @@ class WSWebRTCSignalingServer extends IMyWebSocketHandler {
     }
     /**
      * @param {MyWebSocket} ws 
-     * @param {{type: string, id: string, target: string, data: object}}msg 
      */
-    respUserList(ws, msg){
-        ws.send(JSON.stringify({type:TYPES_USERLIST, data: this.getUserList()}));
-    }
-    /**
-     * @param {MyWebSocket} ws 
-     * @param {{type: string, id: string, target: string, data: object}}msg 
-     */
-     respRegister(ws, msg){
-         const user=this.users.get(ws.id);
-         user.name= msg.data.toString();
-         ws.send(JSON.stringify({type:TYPES_MYID, id: msg.id, data:user}));
-         this.notifyUserlist();
+    respUserList(ws){
+        const msg={
+            type:TYPES_USERLIST, 
+            data: this.getUserList()
+        };
+        ws.send(JSON.stringify(msg));
     }
     
     /**
      * @param {MyWebSocket} ws 
-     * @param {{type: string, id: string, target: string, data: object}}msg 
+	 * @param {{type: number, from: string, to: string, data: object}} msg
      */
     _onMessage(ws, msg) {
         msg = JSON.parse(msg);
-        const id = ws.id;
-        msg.id=id;
         switch (msg.type) {
-            case TYPES_MYID:
-                this.respRegister(ws, msg);
-                break;
             case TYPES_USERLIST:
-                this.respUserList(ws, msg);
+                this.respUserList(ws);
                 break;
             default:
-                const target=this._websockets.get(msg.target);
+                const target=this._websockets.get(msg.to);
                 if(target){
                     target.send(JSON.stringify(msg));
                 }else{
